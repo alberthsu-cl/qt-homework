@@ -1,0 +1,62 @@
+# =============================================================================
+#  Line-ending and diff policy for qt-homework
+#
+#  The repository already stores every text file with LF. This file pins that
+#  down so it no longer depends on whoever clones having core.autocrlf=true --
+#  a contributor with autocrlf=false on Windows would otherwise commit CRLF
+#  and produce a whole-file diff.
+# =============================================================================
+
+# Store text as LF in the repo; check out with the platform's native endings.
+* text=auto
+
+# -----------------------------------------------------------------------------
+#  Windows tooling that wants CRLF in the working tree
+# -----------------------------------------------------------------------------
+*.ps1               text eol=crlf
+*.bat               text eol=crlf
+*.cmd               text eol=crlf
+*.sln               text eol=crlf
+*.vcxproj           text eol=crlf
+*.vcxproj.filters   text eol=crlf
+*.props             text eol=crlf
+*.targets           text eol=crlf
+
+# -----------------------------------------------------------------------------
+#  Sources - explicit, so a stray autocrlf=false cannot sneak CRLF in
+# -----------------------------------------------------------------------------
+*.cpp       text
+*.h         text
+*.qml       text
+*.js        text
+*.qrc       text
+*.pro       text
+*.md        text
+*.html      text
+*.json      text
+qmldir      text
+CMakeLists.txt text
+
+# -----------------------------------------------------------------------------
+#  Binary - never convert, never diff as text
+# -----------------------------------------------------------------------------
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.dll       binary
+*.exe       binary
+*.lib       binary
+*.pdb       binary
+*.rcc       binary
+*.qm        binary
+
+# -----------------------------------------------------------------------------
+#  GitHub language stats
+#  QtKit-Bridge.html is a write-up, not source. Without this it is the largest
+#  file in the repo and GitHub labels the whole thing an "HTML" project.
+# -----------------------------------------------------------------------------
+*.html      linguist-documentation
+*.md        linguist-documentation
