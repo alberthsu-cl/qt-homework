@@ -1,0 +1,818 @@
+<title>The QtKit Bridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ground:#F6F7F9;
+  --surface:#FFFFFF;
+  --sunken:#EEF0F4;
+  --ink:#171A1F;
+  --ink-soft:#5A626E;
+  --ink-faint:#868E9B;
+  --rule:#DCE0E7;
+  --rule-soft:#E8EBF0;
+  --mfc:#A05F00;
+  --mfc-wash:#F6EEE1;
+  --qt:#2C7A4D;
+  --qt-wash:#E6F1EA;
+  --warn:#A3341F;
+  --warn-wash:#F9EBE7;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#111419;
+    --surface:#191D24;
+    --sunken:#1F242C;
+    --ink:#E5E9EF;
+    --ink-soft:#9BA4B1;
+    --ink-faint:#727C89;
+    --rule:#2B313A;
+    --rule-soft:#242A32;
+    --mfc:#E0A44A;
+    --mfc-wash:#2A2115;
+    --qt:#5FC189;
+    --qt-wash:#16251C;
+    --warn:#E0806A;
+    --warn-wash:#2B1A16;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#111419;
+  --surface:#191D24;
+  --sunken:#1F242C;
+  --ink:#E5E9EF;
+  --ink-soft:#9BA4B1;
+  --ink-faint:#727C89;
+  --rule:#2B313A;
+  --rule-soft:#242A32;
+  --mfc:#E0A44A;
+  --mfc-wash:#2A2115;
+  --qt:#5FC189;
+  --qt-wash:#16251C;
+  --warn:#E0806A;
+  --warn-wash:#2B1A16;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Source Serif 4",Georgia,serif;
+  font-size:17px;
+  line-height:1.62;
+  margin:0;
+  padding-block:0 88px;
+  padding-left:20px;
+  padding-right:20px;
+}
+.wrap{max-width:1040px;margin:0 auto}
+.prose{max-width:68ch}
+
+/* ---- masthead ---- */
+.mast{
+  border-bottom:1px solid var(--rule);
+  padding-block:56px 30px;
+  margin-bottom:44px;
+}
+.eyebrow{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 18px;
+}
+h1{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:clamp(2.1rem,5.4vw,3.1rem);
+  font-weight:700;line-height:1.04;letter-spacing:-.022em;
+  margin:0 0 16px;text-wrap:balance;
+}
+.standfirst{
+  font-size:1.12rem;color:var(--ink-soft);margin:0;max-width:60ch;
+}
+.mast dl{
+  display:flex;flex-wrap:wrap;gap:10px 30px;
+  margin:26px 0 0;padding:0;
+  font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+}
+.mast dl div{display:flex;gap:7px}
+.mast dt{color:var(--ink-faint)}
+.mast dd{margin:0;color:var(--ink-soft);font-weight:600}
+
+/* ---- sections ---- */
+section{margin-block:0 60px}
+h2{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:1.52rem;font-weight:700;letter-spacing:-.014em;line-height:1.18;
+  margin:0 0 6px;text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--mono);font-size:.72em;font-weight:400;
+  color:var(--ink-faint);margin-right:12px;
+}
+h3{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:1.04rem;font-weight:600;letter-spacing:-.006em;
+  margin:34px 0 8px;
+}
+.dek{color:var(--ink-soft);margin:0 0 22px;max-width:64ch}
+p{margin:0 0 17px}
+a{color:inherit;text-decoration-color:var(--ink-faint);text-underline-offset:3px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--qt);outline-offset:3px;border-radius:3px}
+
+code{
+  font-family:var(--mono);font-size:.855em;
+  background:var(--sunken);padding:1.5px 5px;border-radius:3px;
+  overflow-wrap:anywhere;
+}
+.mfc-t{color:var(--mfc);font-weight:600}
+.qt-t{color:var(--qt);font-weight:600}
+
+/* ---- figures ---- */
+figure{
+  margin:30px 0;padding:22px 22px 16px;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:7px;
+}
+figure .scroll{overflow-x:auto}
+figure svg{display:block;max-width:100%;height:auto;min-width:600px}
+figcaption{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:12.5px;line-height:1.5;color:var(--ink-soft);
+  margin-top:16px;padding-top:13px;border-top:1px solid var(--rule-soft);
+  max-width:74ch;
+}
+figcaption b{color:var(--ink);font-weight:600}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;margin:24px 0}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px}
+th{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);text-align:left;
+  padding:0 14px 9px 0;border-bottom:1px solid var(--rule);
+}
+td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+td code{font-size:12.5px;background:none;padding:0}
+.on{color:var(--qt);font-weight:600;font-family:"Archivo",sans-serif;font-size:12px}
+.off{color:var(--ink-faint);font-weight:600;font-family:"Archivo",sans-serif;font-size:12px}
+
+/* ---- callout ---- */
+.note{
+  border-left:2.5px solid var(--warn);
+  background:var(--warn-wash);
+  padding:16px 20px;margin:26px 0;border-radius:0 5px 5px 0;
+  font-size:15.5px;
+}
+.note p{margin:0 0 11px}
+.note p:last-child{margin:0}
+.note .tag{
+  font-family:"Archivo",sans-serif;font-size:10.5px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--warn);
+  display:block;margin-bottom:7px;
+}
+
+/* ---- rule list ---- */
+.rules{list-style:none;margin:22px 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rules li{
+  display:grid;grid-template-columns:minmax(0,26ch) 1fr;gap:6px 22px;
+  padding:13px 0;border-bottom:1px solid var(--rule-soft);
+  font-size:15px;
+}
+.rules li:last-child{border-bottom:none}
+.rules b{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink);word-break:break-word}
+.rules span{color:var(--ink-soft)}
+@media(max-width:640px){.rules li{grid-template-columns:1fr}}
+
+/* ---- path list ---- */
+.paths{list-style:none;margin:20px 0;padding:0}
+.paths li{
+  display:grid;grid-template-columns:minmax(0,32ch) 1fr;gap:5px 22px;
+  padding:10px 0;border-bottom:1px solid var(--rule-soft);font-size:14.5px;
+}
+.paths li:last-child{border-bottom:none}
+.paths b{font-family:var(--mono);font-size:12.5px;font-weight:400;color:var(--qt);word-break:break-all}
+.paths span{color:var(--ink-soft)}
+@media(max-width:640px){.paths li{grid-template-columns:1fr}}
+
+.legend{
+  display:flex;flex-wrap:wrap;gap:8px 24px;margin:0 0 20px;padding:0;list-style:none;
+  font-family:"Archivo",sans-serif;font-size:11.5px;color:var(--ink-soft);
+}
+.legend li{display:flex;align-items:center;gap:8px}
+.sw{width:13px;height:13px;border-radius:3px;border:1px solid var(--rule);flex:none}
+
+hr.div{border:none;border-top:1px solid var(--rule);margin:0 0 52px}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">PowerDirector · Architecture brief 01</p>
+  <h1>The QtKit Bridge</h1>
+  <p class="standfirst">How a 25-year-old MFC application hosts a Qt&nbsp;6 QML user interface in the same process, on a second thread, behind per-module switches that let both UIs ship at once.</p>
+  <dl>
+    <div><dt>Qt</dt><dd>6.8.3 · msvc2022_64</dd></div>
+    <div><dt>Bridge</dt><dd>QtKit.dll</dd></div>
+    <div><dt>Host</dt><dd>common_debug.dll</dd></div>
+    <div><dt>Linkage</dt><dd>2 C exports</dd></div>
+  </dl>
+</header>
+
+<section class="prose">
+  <h2><span class="num">00</span>The one idea</h2>
+  <p class="dek">Everything else follows from this.</p>
+  <p><b>Qt is not linked into PowerDirector.</b> Not one Qt header, not one Qt symbol, not one <code>moc</code> pass anywhere in this repo. The entire Qt world is sealed inside <code>QtKit.dll</code>, which PDR loads at runtime with <code>LoadLibraryEx</code> and talks to through exactly two <code>extern "C"</code> functions and a set of pure-virtual C++ structs.</p>
+  <p>That seal is the reason the migration is survivable. MFC's <code>afxwin.h</code> and Qt's <code>qobject.h</code> never meet in a translation unit, so there is no macro war over <code>signals</code>, no MFC <code>DEBUG_NEW</code> poisoning Qt allocations, and no rebuild of the product when Qt bumps a patch version.</p>
+  <p>The price is that every interaction between the two halves has to cross a DLL boundary <em>and</em> a thread boundary. Most of what follows is about how the codebase pays that price.</p>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">01</span>The shape of the process</h2>
+    <p class="dek">One process, two UI threads, three layers of DLL.</p>
+  </div>
+
+  <ul class="legend">
+    <li><span class="sw" style="background:var(--mfc-wash);border-color:var(--mfc)"></span>MFC / native side</li>
+    <li><span class="sw" style="background:var(--qt-wash);border-color:var(--qt)"></span>Qt side</li>
+    <li><svg width="26" height="9" aria-hidden="true"><line x1="0" y1="4.5" x2="26" y2="4.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/></svg>crosses a thread</li>
+  </ul>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 452" role="img" aria-label="Module map: PDR.exe and common_debug.dll run on the MFC main thread and load QtKit.dll, which links Qt6 libraries and runs QApplication on its own thread; the QQuickWindow's HWND is reparented back into the MFC window tree.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="a1q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--qt)"/>
+        </marker>
+      </defs>
+
+      <!-- lane headers -->
+      <text x="24" y="22" font-family="Archivo,sans-serif" font-size="12" font-weight="600" fill="var(--mfc)">PDR MAIN THREAD &nbsp;·&nbsp; MFC MESSAGE PUMP</text>
+      <text x="556" y="22" font-family="Archivo,sans-serif" font-size="12" font-weight="600" fill="var(--qt)">QT THREAD &nbsp;·&nbsp; QApplication::exec()</text>
+
+      <!-- thread divider -->
+      <line x1="528" y1="34" x2="528" y2="438" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity=".45"/>
+
+      <!-- PDR.exe -->
+      <rect x="24" y="40" width="470" height="46" rx="5" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="40" y="62" font-family="Archivo,sans-serif" font-size="13.5" font-weight="600" fill="var(--ink)">PDR.exe</text>
+      <text x="40" y="78" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink-soft)">VideoEditorTL.vcxproj · CWinApp · CMainFrame</text>
+
+      <line x1="259" y1="86" x2="259" y2="106" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+      <!-- common dll -->
+      <rect x="24" y="108" width="470" height="152" rx="5" fill="none" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="40" y="130" font-family="Archivo,sans-serif" font-size="13.5" font-weight="600" fill="var(--ink)">common_debug.dll</text>
+      <text x="181" y="130" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink-faint)">common.vcxproj</text>
+
+      <rect x="42" y="142" width="200" height="46" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="54" y="162" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="var(--ink)">QtKitWrapper</text>
+      <text x="54" y="177" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">singleton · owns the DLL</text>
+
+      <rect x="256" y="142" width="222" height="46" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="268" y="162" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="var(--ink)">CQtController</text>
+      <text x="268" y="177" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">CQtEntryViewController</text>
+
+      <rect x="42" y="200" width="436" height="42" rx="4" fill="none" stroke="var(--rule)" stroke-width="1"/>
+      <text x="54" y="218" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--ink)">MsgConverter · NotifierCenter · FeatureEnableState</text>
+      <text x="54" y="233" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">legacy WM_ messages in, Qt events out</text>
+
+      <!-- bridge arrow -->
+      <line x1="242" y1="165" x2="556" y2="165" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+      <text x="300" y="154" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink-soft)">LoadLibraryEx</text>
+      <text x="300" y="184" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink-soft)">GetProcAddress("createQtKit")</text>
+
+      <!-- QtKit dll -->
+      <rect x="556" y="108" width="320" height="152" rx="5" fill="none" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="572" y="130" font-family="Archivo,sans-serif" font-size="13.5" font-weight="600" fill="var(--ink)">QtKit.dll</text>
+
+      <rect x="574" y="142" width="284" height="46" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1"/>
+      <text x="586" y="162" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="var(--ink)">IQtKit · IQmlContext</text>
+      <text x="586" y="177" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">pure-virtual structs · the whole API</text>
+
+      <rect x="574" y="200" width="284" height="42" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1"/>
+      <text x="586" y="218" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--ink)">QQmlEngine · QQuickWindow</text>
+      <text x="586" y="233" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">class "Qt683QWindow"</text>
+
+      <line x1="716" y1="260" x2="716" y2="284" stroke="var(--qt)" stroke-width="1.4" marker-end="url(#a1q)"/>
+
+      <!-- Qt6 -->
+      <rect x="556" y="286" width="320" height="46" rx="5" fill="none" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="572" y="306" font-family="Archivo,sans-serif" font-size="12.5" font-weight="600" fill="var(--ink)">Qt6Core · Gui · Qml · Quick · QuickControls2</text>
+      <text x="572" y="322" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">statically referenced by QtKit.dll, invisible to PDR</text>
+
+      <!-- HWND return path -->
+      <path d="M574,224 L520,224 L520,382 L262,382" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a1)"/>
+      <text x="286" y="374" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink-soft)">the QQuickWindow's raw HWND comes back</text>
+
+      <rect x="24" y="392" width="470" height="46" rx="5" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="40" y="412" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="var(--ink)">SetParent() / GWLP_HWNDPARENT</text>
+      <text x="40" y="428" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">Qt window becomes a child in the MFC window tree</text>
+    </svg>
+    </div>
+    <figcaption><b>Only one arrow crosses in each direction.</b> Outbound, PDR reaches Qt through two C exports. Inbound, Qt hands back a bare <code>HWND</code> that MFC reparents like any other child window. Nothing else is shared &mdash; no allocator, no type, no build flag.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>The contract lives in <code>src/external include/QtKit/Interface.h</code> &mdash; 965 lines of pure-virtual structs, delivered by eModule alongside the DLL. Two vocabularies live in it: <code>IQtKit</code> and <code>IQmlContext</code> for lifecycle and lookup, and roughly thirty <code>IUI*</code> proxies (<code>IUIButton</code>, <code>IUISlider</code>, <code>IUIListView</code>, <code>IUITextureView</code>&hellip;) standing in for QML item types.</p>
+    <p>Because the header is a hand-written ABI rather than a generated one, ordering matters. The comment above <code>setUiTraceOutput</code> says so outright: the two trace methods were <em>appended</em> to the end of the vtable, never inserted, so a newer <code>QtKit.dll</code> stays compatible with an older PDR build. Add a method in the middle of one of these structs and you will silently corrupt every call after it.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">02</span>Boot: how the Qt thread is born</h2>
+    <p class="dek">All of this sits in one constructor &mdash; <code>QtKitWrapper::QtKitWrapper()</code>, reached the first time anyone calls <code>QtKitWrapper::shared()</code>.</p>
+  </div>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 760 556" role="img" aria-label="Boot sequence: load the DLL, create IQtKit, push configuration, call run(async) which spawns the Qt thread; the context only exists inside the contextCreatedAction callback, so earlier load and bind requests are queued and flushed there.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <text x="20" y="20" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--mfc)">MAIN THREAD</text>
+      <text x="470" y="20" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--qt)">QT THREAD</text>
+
+      <line x1="452" y1="30" x2="452" y2="542" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity=".45"/>
+
+      <!-- steps main thread -->
+      <rect x="20" y="36" width="408" height="38" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="34" y="53" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">1 · resolve QtKit.dll beside the .exe</text>
+      <text x="34" y="67" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">GetModuleFileName + PathRemoveFileSpec</text>
+
+      <line x1="224" y1="74" x2="224" y2="86" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <rect x="20" y="88" width="408" height="38" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="34" y="105" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">2 · LoadLibraryEx + createQtKit()</text>
+      <text x="34" y="119" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">LOAD_WITH_ALTERED_SEARCH_PATH &rarr; IQtKit*</text>
+
+      <line x1="224" y1="126" x2="224" y2="138" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <rect x="20" y="140" width="408" height="128" rx="4" fill="none" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="34" y="158" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">3 · push all configuration, before any thread exists</text>
+      <text x="34" y="176" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setAppName · setRccPath / setImageDir</text>
+      <text x="34" y="191" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setDpiScale &nbsp;(app DPI &divide; monitor DPI)</text>
+      <text x="34" y="206" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setQmPath &nbsp;(":/languages/cht.qm" when packed)</text>
+      <text x="34" y="221" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setUserConfigIniPath · setDontShowAgainIniPath</text>
+      <text x="34" y="236" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setDebugOutput &nbsp;(lambda &rarr; PDR's logger)</text>
+      <text x="34" y="251" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setCreateFactory(this) · enableTheme(Dark)</text>
+
+      <line x1="224" y1="268" x2="224" y2="280" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <rect x="20" y="282" width="408" height="38" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.4"/>
+      <text x="34" y="299" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">4 · qtKit-&gt;run(async = true, onCreated, onRemoved)</text>
+      <text x="34" y="313" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">returns immediately &mdash; the ctor does not block</text>
+
+      <!-- hop -->
+      <path d="M428,300 L490,300 L490,344" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a2)"/>
+      <text x="300" y="340" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--warn)" font-weight="600">thread is spawned here</text>
+
+      <!-- qt thread -->
+      <rect x="470" y="346" width="272" height="38" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1"/>
+      <text x="484" y="363" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">5 · QApplication constructed</text>
+      <text x="484" y="377" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">qApp now exists; exec() not yet entered</text>
+
+      <line x1="606" y1="384" x2="606" y2="396" stroke="var(--qt)" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <rect x="470" y="398" width="272" height="96" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.4"/>
+      <text x="484" y="416" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">6 · onCreated fires (on the Qt thread)</text>
+      <text x="484" y="433" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">m_dwQtThreadId = GetCurrentThreadId()</text>
+      <text x="484" y="448" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">context = qtKit-&gt;context()</text>
+      <text x="484" y="463" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setUiTraceLevel()  &larr; needs qApp</text>
+      <text x="484" y="478" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">flush deferred binds + deferred loads</text>
+
+      <line x1="606" y1="494" x2="606" y2="506" stroke="var(--qt)" stroke-width="1.3" marker-end="url(#a2)"/>
+      <rect x="470" y="508" width="272" height="34" rx="4" fill="none" stroke="var(--qt)" stroke-width="1"/>
+      <text x="484" y="530" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">7 · exec() &mdash; runs until quit()</text>
+
+      <!-- queue -->
+      <rect x="20" y="398" width="408" height="96" rx="4" fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="34" y="418" font-family="Archivo,sans-serif" font-size="11" font-weight="600" fill="var(--warn)">MEANWHILE: the holding pen</text>
+      <text x="34" y="437" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">Any load() or PostBindAction() arriving in</text>
+      <text x="34" y="452" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">steps 4&ndash;5 finds context == nullptr and is</text>
+      <text x="34" y="467" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">queued into m_listDeferredLoadQml or</text>
+      <text x="34" y="482" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">m_mapDeferredBindAction, then replayed in 6.</text>
+    </svg>
+    </div>
+    <figcaption><b>The window between steps 4 and 6 is real and observable.</b> <code>run()</code> returns before the context exists, so the wrapper keeps two queues and replays them from the creation callback. Any code you write that touches <code>IQmlContext</code> must tolerate it being null.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>Step 6 carries a lesson the code comments at length. <code>setUiTraceLevel()</code> was originally called from the constructor, which looked harmless &mdash; and silently did nothing, because it installs an event filter on <code>qApp</code>, and <code>qApp</code> does not exist until the Qt thread constructs it. The fix was to defer the call into the creation callback. Expect more of this shape: <b>anything that touches Qt global state must run in the callback, not the constructor.</b></p>
+  </div>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">03</span>Binding: how C++ addresses a QML object</h2>
+    <p class="dek">There is no code generation and no <code>Q_PROPERTY</code> on the PDR side. Objects are addressed by string name.</p>
+  </div>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 880 358" role="img" aria-label="Binding model: a QML object's id is looked up by string through IQmlContext accessors, which return typed IUI proxies; setBindAction notifies C++ when the id becomes available, and isObjectBound guards against unbound access.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- qml side -->
+      <text x="620" y="20" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--qt)">QML &nbsp;·&nbsp; skinQt/qml/**</text>
+      <rect x="600" y="32" width="262" height="104" rx="5" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="616" y="54" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">Button {</text>
+      <text x="616" y="70" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--qt)">&nbsp;&nbsp;objectName: "dpPlayBtn"</text>
+      <text x="616" y="86" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">&nbsp;&nbsp;text: qsTr("Play")</text>
+      <text x="616" y="102" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">}</text>
+      <text x="616" y="124" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">the name is the entire contract</text>
+
+      <!-- c++ side -->
+      <text x="20" y="20" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--mfc)">C++ &nbsp;·&nbsp; CQtViewController subclass</text>
+      <rect x="18" y="32" width="300" height="104" rx="5" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="34" y="56" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">m_pContext-&gt;button("dpPlayBtn")</text>
+      <text x="34" y="73" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">&nbsp;&nbsp;.setClickedAction([]{ &hellip; });</text>
+      <text x="34" y="99" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--ink)">IsQmlBound("dpPlayBtn")</text>
+      <text x="34" y="120" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">guard before every dereference</text>
+
+      <!-- context -->
+      <rect x="352" y="32" width="214" height="104" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="368" y="54" font-family="Archivo,sans-serif" font-size="12" font-weight="600" fill="var(--ink)">IQmlContext</text>
+      <text x="368" y="74" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">string &rarr; typed proxy</text>
+      <text x="368" y="91" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">~30 accessors:</text>
+      <text x="368" y="106" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--qt)">button() slider() listView()</text>
+      <text x="368" y="121" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--qt)">window() textureview() &hellip;</text>
+
+      <line x1="318" y1="70" x2="346" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#a3)"/>
+      <line x1="566" y1="70" x2="594" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#a3)"/>
+      <text x="332" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="var(--ink-faint)">lookup</text>
+      <text x="572" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="var(--ink-faint)">resolve</text>
+
+      <!-- lifecycle strip -->
+      <text x="20" y="182" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink-faint)">WHY THE NAME MAY NOT RESOLVE YET</text>
+      <line x1="18" y1="192" x2="862" y2="192" stroke="var(--rule)" stroke-width="1"/>
+
+      <rect x="18" y="208" width="196" height="70" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+      <text x="32" y="228" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">entry .qml loads</text>
+      <text x="32" y="246" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">root object created;</text>
+      <text x="32" y="261" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">nested Loaders still pending</text>
+
+      <line x1="214" y1="243" x2="242" y2="243" stroke="currentColor" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="244" y="208" width="196" height="70" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="258" y="228" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">id becomes bound</text>
+      <text x="258" y="246" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">setBindAction(name, cb)</text>
+      <text x="258" y="261" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">fires &mdash; now safe to touch</text>
+
+      <line x1="440" y1="243" x2="468" y2="243" stroke="currentColor" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="470" y="208" width="196" height="70" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+      <text x="484" y="228" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">StackView pops page</text>
+      <text x="484" y="246" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">the id unbinds again</text>
+      <text x="484" y="261" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">while your ptr is unchanged</text>
+
+      <line x1="666" y1="243" x2="694" y2="243" stroke="currentColor" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="696" y="208" width="166" height="70" rx="4" fill="var(--warn-wash)" stroke="var(--warn)" stroke-width="1.2"/>
+      <text x="710" y="228" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--warn)">unguarded access</text>
+      <text x="710" y="246" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">throws</text>
+      <text x="710" y="261" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">QmlObjectNoBoundError</text>
+
+      <rect x="18" y="298" width="844" height="46" rx="4" fill="var(--sunken)" stroke="var(--rule)" stroke-width="1"/>
+      <text x="34" y="317" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink)">PostBindAction() = setBindAction( name, [&#123; postCall( [&#123; if (isObjectBound(name)) action(); &#125;] ) &#125;] )</text>
+      <text x="34" y="334" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">bind, then defer one turn of the event loop, then re-check &mdash; because an async Loader can finish as its owning entry unloads</text>
+    </svg>
+    </div>
+    <figcaption><b>String names make the boundary loose, and the looseness is the hazard.</b> Rename an <code>objectName</code> in QML and nothing fails to compile; the call simply throws at runtime, or silently no-ops. The defensive <code>isObjectBound</code> checks scattered through the controllers are not paranoia.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>This is why <code>skinQt/AUTOMATION_ID_NAMING.md</code> and the <code>add-automation-id</code> skill exist, and why there are audit scripts (<code>audit_id_coverage.py</code>, <code>check_automation_id.py</code>) in the same folder. The names are load-bearing, so the repo polices them mechanically.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">04</span>Windows: both directions</h2>
+    <p class="dek">Qt content inside an MFC frame, and native content inside a QML scene. The codebase does both, by opposite mechanisms.</p>
+  </div>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 880 380" role="img" aria-label="Two opposite embedding directions: a QML window's HWND is pulled out and reparented under an MFC parent with an event filter intercepting messages; and a native HWND is pushed into a QML WindowHost item via AttachWindowHost.">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- A -->
+      <text x="18" y="20" font-family="Archivo,sans-serif" font-size="12" font-weight="600" fill="var(--ink)">A &nbsp;· QML &rarr; MFC &nbsp;<tspan fill="var(--ink-faint)" font-weight="400">the common case</tspan></text>
+      <rect x="18" y="30" width="410" height="330" rx="6" fill="none" stroke="var(--rule)" stroke-width="1"/>
+
+      <rect x="38" y="48" width="370" height="42" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1"/>
+      <text x="52" y="66" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">QML declares a Window { objectName: "dlgWnd" }</text>
+      <text x="52" y="81" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">Qt creates a real top-level Qt683QWindow</text>
+
+      <line x1="223" y1="90" x2="223" y2="104" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="38" y="106" width="370" height="42" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="52" y="124" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">context-&gt;window("dlgWnd").window()</text>
+      <text x="52" y="139" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">returns void* &mdash; cast straight to HWND</text>
+
+      <line x1="223" y1="148" x2="223" y2="162" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="38" y="164" width="370" height="60" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="52" y="182" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">reparent into the MFC tree</text>
+      <text x="52" y="199" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">modal &nbsp;&rarr; SetWindowLongPtr(GWLP_HWNDPARENT)</text>
+      <text x="52" y="214" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">docked &rarr; SetParent() + SetWindowPos()</text>
+
+      <line x1="223" y1="224" x2="223" y2="238" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="38" y="240" width="370" height="102" rx="4" fill="none" stroke="var(--warn)" stroke-width="1.2"/>
+      <text x="52" y="258" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--warn)">install a per-window message hook</text>
+      <text x="52" y="276" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">pEventFilter-&gt;addWindowEventCallback(hQtWnd, &hellip;)</text>
+      <text x="52" y="295" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink)">WM_SETCURSOR &nbsp;&rarr; swallow (Qt owns the cursor)</text>
+      <text x="52" y="311" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink)">WM_MOUSEACTIVATE &rarr; answer MA_ACTIVATE here,</text>
+      <text x="52" y="326" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">so the MFC parent never gets to veto activation</text>
+
+      <!-- B -->
+      <text x="452" y="20" font-family="Archivo,sans-serif" font-size="12" font-weight="600" fill="var(--ink)">B &nbsp;· MFC &rarr; QML &nbsp;<tspan fill="var(--ink-faint)" font-weight="400">webviews, legacy controls</tspan></text>
+      <rect x="452" y="30" width="410" height="330" rx="6" fill="none" stroke="var(--rule)" stroke-width="1"/>
+
+      <rect x="472" y="48" width="370" height="42" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1"/>
+      <text x="486" y="66" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">native control already has an HWND</text>
+      <text x="486" y="81" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">e.g. QtCGHTMLCtrlHelper webview</text>
+
+      <line x1="657" y1="90" x2="657" y2="104" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="472" y="106" width="370" height="42" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="486" y="124" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">AttachWindowHost("hostId", hwnd, onDone)</text>
+      <text x="486" y="139" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">callable from any thread; hops to the Qt thread</text>
+
+      <line x1="657" y1="148" x2="657" y2="162" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="472" y="164" width="370" height="60" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="486" y="182" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">context-&gt;windowHost("hostId").window(hwnd)</text>
+      <text x="486" y="199" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">IWindowHost has exactly one method &mdash;</text>
+      <text x="486" y="214" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">QML then drives its geometry and z-order</text>
+
+      <line x1="657" y1="224" x2="657" y2="238" stroke="currentColor" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <rect x="472" y="240" width="370" height="102" rx="4" fill="none" stroke="var(--warn)" stroke-width="1.2"/>
+      <text x="486" y="258" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--warn)">the ordering trap</text>
+      <text x="486" y="276" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">The host only picks up the native window's</text>
+      <text x="486" y="291" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">geometry when something changes afterwards.</text>
+      <text x="486" y="311" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink)">So: keep the WindowHost hidden in QML, and</text>
+      <text x="486" y="326" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink)">flip its "ready" flag from the onDone callback.</text>
+    </svg>
+    </div>
+    <figcaption><b>Direction A pulls a handle out of Qt; direction B pushes a handle in.</b> Both end up as ordinary Win32 parent/child relationships &mdash; there is no compositing layer, no shared surface, and no Qt widget wrapper. Painting, hit-testing and focus are negotiated by the window manager, which is why the message hook in A is necessary at all.</figcaption>
+  </figure>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">05</span>The thread rule</h2>
+    <p class="dek">If you internalise one thing from this document, make it this section.</p>
+    <p>MFC objects belong to the main thread. <code>IQmlContext</code> and every <code>IUI*</code> proxy belong to the Qt thread. Touching either from the wrong side is undefined behaviour that usually presents as an intermittent crash on shutdown, not an assert at the call site.</p>
+    <p>The codebase gives you executors on both sides so you never have to hand-roll a hop:</p>
+  </div>
+
+  <ul class="rules">
+    <li><b>RunOnQtThreadAsync(fn)</b><span>Main &rarr; Qt. On <code>CQtViewController</code> and <code>CQtController</code>. Silently drops the call if the entry is already unloading &mdash; that check is the point of it.</span></li>
+    <li><b>RunOnMainThreadAsync(fn)<br>RunOnMainThreadSync(fn)</b><span>Qt &rarr; main. On <code>CQtController</code>, routed through <code>CMsgProxy</code> so it rides the MFC message pump.</span></li>
+    <li><b>context-&gt;postCall(fn)<br>context-&gt;delayCall(fn, ms)</b><span>Already on the Qt thread, but you want to yield a turn of the event loop first. This is how <code>PostBindAction</code> dodges the unload race.</span></li>
+    <li><b>QtKitWrapper::shared()<br>-&gt;isQtThread()</b><span>Assert which side you are on. Cheap; use it liberally while learning.</span></li>
+  </ul>
+
+  <div class="prose">
+    <p>Three lifecycle hooks let a view controller do its work at the right moment on the right thread: <code>OnQmlDidLoad</code>, <code>OnQmlWillUnload</code>, <code>OnQmlDidUnload</code>. Between the last two, <code>ShutDownQtExecutor()</code> runs and pending hops are discarded, which is what keeps a queued lambda from firing into a destroyed controller.</p>
+
+    <div class="note">
+      <span class="tag">Reading the code, not the comment</span>
+      <p>The <code>CQtEntryViewController</code> comments record real shipped bugs and are worth reading as a change log. One names an eBug outright: dismissing a Qt window while the MFC main window was disabled let Windows hand the foreground to another application, so PowerDirector appeared to minimise itself. The fix &mdash; re-enable and re-foreground the owner <em>before</em> dismissing &mdash; sits in <code>OnQmlWillUnloadImp</code>.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">06</span>Dual-mode: shipping both UIs at once</h2>
+    <p class="dek">Each migrated panel exists twice. A registry value picks which one runs, per module, at startup.</p>
+  </div>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 330" role="img" aria-label="Dual-mode routing: legacy MFC code posts a UN_ message which a MsgConverter translates into a named event on NotifierCenter; Qt view controllers observe it and hop to the Qt thread, while the legacy MFC panel handles the same message directly. A registry value selects which panel is live.">
+      <defs>
+        <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <rect x="18" y="118" width="176" height="66" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="32" y="140" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink)">Legacy MFC code</text>
+      <text x="32" y="158" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">WorkSpace, Library, &hellip;</text>
+      <text x="32" y="173" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">posts UN_WORKSPACE_SEL_OBJ</text>
+
+      <line x1="194" y1="151" x2="228" y2="151" stroke="currentColor" stroke-width="1.5" marker-end="url(#a5)"/>
+
+      <rect x="230" y="118" width="186" height="66" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="244" y="140" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink)">MsgConverter</text>
+      <text x="244" y="158" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">one per module &mdash; a big</text>
+      <text x="244" y="173" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">switch on the UINT</text>
+
+      <line x1="416" y1="151" x2="450" y2="151" stroke="currentColor" stroke-width="1.5" marker-end="url(#a5)"/>
+      <text x="420" y="142" font-family="JetBrains Mono,monospace" font-size="9" fill="var(--ink-faint)">Say()</text>
+
+      <rect x="452" y="118" width="186" height="66" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="466" y="140" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink)">NotifierCenter</text>
+      <text x="466" y="158" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">dot(MainPanel).Notify(</text>
+      <text x="466" y="173" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--qt)">&nbsp;&nbsp;WorkSpaceSelectObj )</text>
+
+      <line x1="638" y1="151" x2="672" y2="151" stroke="currentColor" stroke-width="1.5" marker-end="url(#a5)"/>
+
+      <rect x="674" y="106" width="208" height="90" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="688" y="128" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink)">Qt view controller</text>
+      <text x="688" y="146" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">Listen(this, evt, handler)</text>
+      <text x="688" y="164" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">RunOnQtThreadAsync(&hellip;)</text>
+      <text x="688" y="182" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--qt)">context-&gt;listView("x").&hellip;</text>
+
+      <!-- legacy path down -->
+      <path d="M106,184 L106,246 L672,246" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3" opacity=".6" marker-end="url(#a5)"/>
+      <text x="260" y="238" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-faint)">the same message still reaches the old MFC panel directly</text>
+
+      <rect x="674" y="222" width="208" height="48" rx="4" fill="none" stroke="var(--mfc)" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="688" y="242" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink-soft)">Legacy MFC panel</text>
+      <text x="688" y="259" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-faint)">still built, still shippable</text>
+
+      <!-- gate -->
+      <rect x="452" y="24" width="430" height="62" rx="4" fill="var(--sunken)" stroke="var(--rule)" stroke-width="1"/>
+      <text x="466" y="44" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink)">FeatureEnableState &mdash; the gate</text>
+      <text x="466" y="62" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">HKCU\Software\CyberLink\PowerDirector25\QtMigration\</text>
+      <text x="466" y="77" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">&nbsp;&nbsp;&lt;Module&gt;\MsgConverter &nbsp;(DWORD)</text>
+
+      <line x1="667" y1="86" x2="667" y2="102" stroke="currentColor" stroke-width="1.4" marker-end="url(#a5)"/>
+      <line x1="560" y1="86" x2="560" y2="114" stroke="currentColor" stroke-width="1.4" opacity=".4" marker-end="url(#a5)"/>
+
+      <text x="18" y="304" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink-soft)">Both halves are compiled into every build. The switch decides which one is wired up &mdash; so a regression is a registry flip away from being isolated.</text>
+    </svg>
+    </div>
+    <figcaption><b>The converter is the seam.</b> Legacy code keeps posting the <code>UN_*</code> messages it always posted; the converter turns them into named, typed events that the Qt side subscribes to. Neither half had to learn about the other.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>Read <code>src/ui/common/MigrateCandy.h</code> early &mdash; it is the migration's lingua franca. <code>Say(evt, param)</code> publishes, <code>Listen(this, evt, fn)</code> subscribes, and the <code>QDP_event</code> / <code>QSP_event</code> / <code>QLIB_event</code> namespace aliases keep the call sites short. The file's name is a joke about syntactic sugar, but it is genuinely the front door.</p>
+
+    <h3>Which modules are live today</h3>
+    <p>Straight out of <code>FeatureEnableState.cpp</code>. Note the two defaults that differ &mdash; those read <code>reg.Load() &amp;&amp; reg</code> rather than <code>reg.Load() ? reg : true</code>, so an absent key means off:</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Module</th><th>Registry sub-key &amp; value</th><th>Default</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>DisplayPanel</code></td><td><code>DisplayPanel\MsgConverter</code></td><td><span class="on">ON</span></td><td>Preview area is QML</td></tr>
+        <tr><td><code>SettingPanel</code></td><td><code>SettingPanel\MsgConverter</code></td><td><span class="on">ON</span></td><td>Clip settings are QML</td></tr>
+        <tr><td><code>TipsArea</code></td><td><code>TipsArea\MsgConverter</code></td><td><span class="on">ON</span></td><td></td></tr>
+        <tr><td><code>Library</code></td><td><code>Library\MsgConverter</code></td><td><span class="on">ON</span></td><td>Media room is QML</td></tr>
+        <tr><td><code>SubtitleRoom</code></td><td><code>Library\SubtitleRoom</code></td><td><span class="on">ON</span></td><td>Nested under Library</td></tr>
+        <tr><td><code>ColorMatch</code></td><td><code>ColorMatch</code></td><td><span class="on">ON</span></td><td>At the QtMigration root</td></tr>
+        <tr><td><code>Timeline</code></td><td><code>Timeline\MsgConverter</code></td><td><span class="off">OFF</span></td><td>MFC ruler still live, kept in sync</td></tr>
+        <tr><td><code>StageSettingPage</code></td><td><code>SettingPanel\IsStageEnabled</code></td><td><span class="off">OFF</span></td><td>In progress</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">The timeline is the one still to fall, and its comment says exactly where things stand: <em>"TRUE once the Qt timeline replaces the MFC timeline ruler. While FALSE the MFC ruler is still alive and is kept in sync."</em> That dual-maintenance burden is the current cost centre of the migration.</p>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">07</span>Resources: from .qml to .rcc</h2>
+    <p class="dek">QML, images and translations ship as one packed binary &mdash; or as loose files, if you are a developer.</p>
+    <p>Everything under <code>skinQt/</code> is collected by <code>qrcGen.py</code> into a generated <code>skinQt.qrc</code>, then compiled by Qt's <code>rcc.exe</code> into a single <code>skinQt.rcc</code>. <code>skinQt/rcc.bat</code> is the whole build step, and it hardcodes the toolchain path:</p>
+  </div>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 880 218" role="img" aria-label="Resource pipeline: qml, media and language files are gathered by qrcGen.py into skinQt.qrc, compiled by rcc.exe into skinQt.rcc; at runtime the presence of that file switches entry paths from filesystem paths to qrc colon-slash paths.">
+      <defs>
+        <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <rect x="18" y="30" width="170" height="74" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="32" y="50" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink)">skinQt/qml/**</text>
+      <text x="32" y="68" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink)">skinQt/media/**</text>
+      <text x="32" y="86" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ink)">skinQt/languages/*.qm</text>
+
+      <line x1="188" y1="67" x2="220" y2="67" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
+
+      <rect x="222" y="38" width="152" height="58" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="236" y="60" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">qrcGen.py</text>
+      <text x="236" y="78" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">&rarr; skinQt.qrc</text>
+
+      <line x1="374" y1="67" x2="406" y2="67" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
+
+      <rect x="408" y="38" width="196" height="58" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.2"/>
+      <text x="422" y="60" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">rcc.exe --binary</text>
+      <text x="422" y="78" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">C:\Qt683\6.8.3\msvc2022_64</text>
+
+      <line x1="604" y1="67" x2="636" y2="67" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
+
+      <rect x="638" y="38" width="224" height="58" rx="4" fill="var(--mfc-wash)" stroke="var(--mfc)" stroke-width="1.2"/>
+      <text x="652" y="60" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="600" fill="var(--ink)">skinQt.rcc</text>
+      <text x="652" y="78" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">dropped beside PDR.exe</text>
+
+      <!-- runtime fork -->
+      <line x1="750" y1="96" x2="750" y2="120" stroke="currentColor" stroke-width="1.4" marker-end="url(#a6)"/>
+      <text x="18" y="140" font-family="Archivo,sans-serif" font-size="11.5" font-weight="600" fill="var(--ink-faint)">AT STARTUP THE WRAPPER FORKS ON ITS PRESENCE</text>
+      <line x1="18" y1="150" x2="862" y2="150" stroke="var(--rule)" stroke-width="1"/>
+
+      <rect x="18" y="164" width="416" height="44" rx="4" fill="var(--qt-wash)" stroke="var(--qt)" stroke-width="1.1"/>
+      <text x="32" y="182" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600" fill="var(--ink)">.rcc found &rarr; setRccPath(), isRccFileReady() == true</text>
+      <text x="32" y="198" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">entries load as ":/qml/Dialog/Foo.qml"  ·  shipping builds</text>
+
+      <rect x="446" y="164" width="416" height="44" rx="4" fill="none" stroke="var(--rule)" stroke-width="1.1"/>
+      <text x="460" y="182" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600" fill="var(--ink)">no .rcc &rarr; setImageDir() points at ../../skinQt/media</text>
+      <text x="460" y="198" font-family="JetBrains Mono,monospace" font-size="9.5" fill="var(--ink-soft)">entries load from disk  ·  edit QML and restart, no rebuild</text>
+    </svg>
+    </div>
+    <figcaption><b>That fork is why every entry controller is constructed with two paths.</b> <code>CQtEntryViewController(pController, strSkinQml, strRccQml, strQtWndId)</code> takes the filesystem path and the <code>:/</code> path, and picks between them based on <code>isRccFileReady()</code>. Pass a mismatched pair and the dialog works on your machine and fails in the installer.</figcaption>
+  </figure>
+
+  <p class="prose">The loose-file mode is the one you want while developing a panel: delete or rename <code>skinQt.rcc</code> next to the executable and QML is read from the working tree, so an edit costs a restart instead of a build.</p>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">08</span>Two things that will confuse you</h2>
+    <p class="dek">Both verified against the tree at <code>e82e4c817e</code>. Neither is mentioned in the docs.</p>
+
+    <div class="note">
+      <span class="tag">1 · A Debug build loads the release QtKit</span>
+      <p><code>QtKitWrapper.cpp</code> and <code>QtKitWrapper.h</code> both branch on <code>#ifdef DEBUG</code> to choose <code>QtKitd.dll</code> over <code>QtKit.dll</code>, and to choose the <code>Qt683dQWindow</code> class name over <code>Qt683QWindow</code>.</p>
+      <p>No project in this repo ever defines bare <code>DEBUG</code>. MSVC's macro is <code>_DEBUG</code>, and that is what all fifteen <code>.vcxproj</code> files set. So the branch is dead: <b>even <code>Debug|x64</code> loads the release <code>QtKit.dll</code></b>. <code>QtKitd.dll</code> ships to <code>bin_x64\PowerDirector\</code> at 5.2&nbsp;MB and is never opened through this path.</p>
+      <p>Practical effect: you cannot step into QtKit's debug build without defining <code>DEBUG</code> yourself. Do not "fix" this casually &mdash; flipping it changes which Qt6 DLLs get loaded process-wide.</p>
+    </div>
+
+    <div class="note">
+      <span class="tag">2 · AGENTS.md names the wrong registry root</span>
+      <p><code>AGENTS.md</code> documents the dual-mode switch under <code>&hellip;\CyberLink\PowerDirector24\QtMigration\Library</code>. The current root is <b><code>PowerDirector25</code></b> &mdash; <code>STR_PDR_FULL_NAME</code> in <code>src/ui/definition/PDRPathDef.cpp</code>. <code>PowerDirector24</code> is now the first entry in <code>STR_PDR_FULL_NAME_PREV</code>, the list used for settings migration from older installs.</p>
+      <p>If you set the key by hand and nothing changes, this is why.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<section>
+  <div class="prose">
+    <h2><span class="num">09</span>Where to read next</h2>
+    <p class="dek">In this order. Each one is short.</p>
+  </div>
+
+  <ul class="paths">
+    <li><b>src/external include/QtKit/Interface.h</b><span>The whole contract. Skim <code>IQtKit</code> and <code>IQmlContext</code>, ignore the thirty <code>IUI*</code> structs until you need one.</span></li>
+    <li><b>src/ui/QtKitWrapper/QtKitWrapper.cpp</b><span>446 lines, and the only place the DLL is loaded. Read the constructor and <code>run()</code>.</span></li>
+    <li><b>src/ui/common/MigrateCandy.h</b><span>The <code>Say</code> / <code>Listen</code> vocabulary every migrated module speaks.</span></li>
+    <li><b>src/ui/common/Qt/QtViewController.cpp</b><span>The entry/sub view-controller lifecycle, HWND reparenting, and the event filter.</span></li>
+    <li><b>src/ui/common/QtMigration/FeatureEnableState.cpp</b><span>80 lines. The complete list of what is switched on.</span></li>
+    <li><b>src/ui/displaypanel/QtDisplayPanel/</b><span>A finished module to copy the shape from &mdash; <code>Controller/</code>, <code>Model/</code>, <code>Helper/</code>, with the legacy panel kept beside it as <code>LegacyDisplayPanel.h</code>.</span></li>
+    <li><b>skinQt/AUTOMATION_ID_NAMING.md</b><span>Naming rules for the strings that hold the binding together.</span></li>
+  </ul>
+
+  <p class="prose" style="color:var(--ink-faint);font-size:14.5px;margin-top:34px">Drawn from the working tree on branch <code>master</code>. Registry defaults, the <code>DEBUG</code> finding and the version-root correction were each checked against source rather than documentation.</p>
+</section>
+
+</div>
