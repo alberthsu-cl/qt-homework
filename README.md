@@ -1,4 +1,4 @@
-# arch_review
+# qt-homework
 
 Onboarding notes for PowerDirector (PDR), written while getting a fresh clone
 building and then working out how the Qt integration actually fits together.
@@ -20,7 +20,7 @@ Audience: an RD who is new to this codebase.
 | [`BUILD_SETUP.md`](BUILD_SETUP.md) | Why a fresh clone fails to link with `LNK1104: cannot open file 'CtrlFactoryD.lib'`, and the eModule step that fixes it. Includes the failure modes hit on a real first run. |
 | [`QTKIT_ARCHITECTURE.md`](QTKIT_ARCHITECTURE.md) | How the MFC application hosts Qt 6 QML through `QtKit.dll` — module map, boot sequence, binding model, window embedding, threading rules, dual-mode switches, resource pipeline. Mermaid diagrams render in VS Code (the `bierner.markdown-mermaid` extension `bootstrap.bat` installs). |
 | [`QtKit-Bridge.html`](QtKit-Bridge.html) | The same architecture brief as a self-contained HTML page with hand-drawn SVG diagrams. Open it directly in a browser. |
-| [`mfc_qml_demo/`](mfc_qml_demo/) | A working ~600-line MFC app that loads `QtKit.dll`, hosts a QML canvas in its frame, and talks to it both ways. Builds with VS2022 against this repo alone - no Qt SDK needed. Its README lists seven failure modes that each cost a build cycle. |
+| [`mfc_qml_demo/`](mfc_qml_demo/) | A working ~1400-line MFC app that loads `QtKit.dll`, hosts a QML canvas in its frame, and talks to it both ways. Split into controller / view-controller / QML the way a real PDR feature is, so the layering is visible and not just described. Builds with VS2022 against this repo alone - no Qt SDK needed. Its README lists eight failure modes that each cost a build cycle. |
 
 Published copy of the HTML brief (same content, shareable link):
 https://claude.ai/code/artifact/7d568ad8-b78b-4a70-b468-ddd410f74bb0
@@ -71,7 +71,7 @@ Both verified against source at `e82e4c817e`, both still unfixed upstream:
 ## Running the demo
 
 ```bat
-cd arch_review\mfc_qml_demo
+cd qt-homework\mfc_qml_demo
 powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1
 msbuild MfcQmlDemo.vcxproj /p:Configuration=Debug /p:Platform=x64
 bin_x64\MfcQmlDemo.exe
@@ -80,7 +80,7 @@ bin_x64\MfcQmlDemo.exe
 It runs from its own self-contained `bin_x64\` - 116 files, 56 MB, staged out
 of the product output and loading nothing from it. See
 [`mfc_qml_demo/README.md`](mfc_qml_demo/README.md) for the dependency inventory
-and the seven gotchas.
+and the eight gotchas.
 
 ## Next areas to write up
 

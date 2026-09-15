@@ -23,13 +23,23 @@ claim below was verified at runtime, not by inspection.
 | **File > Open Image...** puts a picture on the QML canvas | C++ &rarr; QML | `context->label(name).text(fileUrl)` on the Qt thread |
 | The caption reads `C++ pushed: <filename>` | C++ &rarr; QML | same, second bound Label |
 | Clicking a QML button updates the native status strip | QML &rarr; C++ | `context->button(name).setClickedAction(...)`, then `PostMessage` to the MFC thread |
-| Zoom / Rotate transform the image | QML-local | QML owns this view state |
+| Zoom / Rotate transform the image | QML &rarr; C++ &rarr; QML | the button reports intent, `CDemoController` applies the rule, `context->property(name).property("zoomFactor", f)` writes the result back, and QML's own bindings redraw |
 
 Verified round trip, from the live process:
 
 ```
 status BEFORE: '  QML is live. Native MFC owns this strip and the menu above.'
-status AFTER : '  QML button "Rotate 90" reached C++  (1 clicks so far)'
+status AFTER : '  QML "Rotate 90" -> C++ decided: zoom 1.50x, rot 90 deg  (3 clicks)'
+```
+
+Note what the "after" line proves: C++ is reporting the zoom and rotation from
+its **own** members. It never asks QML what the numbers are, because it is the
+side that decided them. The matching log, after Zoom in twice then Rotate:
+
+```
+PublishState: zoom=1.25 rot=0  (readback zoom=1.25 rot=0)
+PublishState: zoom=1.50 rot=0  (readback zoom=1.50 rot=0)
+PublishState: zoom=1.50 rot=90 (readback zoom=1.50 rot=90)
 ```
 
 And the window tree, proving the adoption is a real Win32 parent/child:
@@ -42,13 +52,56 @@ TOP    class=AfxFrameOrView140ud   'MFC + QML demo'      <- MFC frame
 
 ---
 
+## How the layers split
+
+```
+CMainFrame             MFC and nothing else: menu, status strip, file
+      |                dialog, layout.
+      v
+CDemoController        The state and the rules. Owns zoomFactor and
+      |                rotationDeg, clamps to 0.1-4.0, steps rotation by 90.
+      |                Knows nothing about QML ids or HWNDs.
+      v
+CDemoViewController    The QML adapter. Loads the .qml, adopts the HWND,
+      |                wires bindings, hops threads. Holds no feature state.
+      v
+DemoWindow.qml         Presentation. Reads DemoProperty.*; the buttons
+DemoProperty.qml       report intent and decide nothing.
+```
+
+| This demo | PDR | Base class |
+|---|---|---|
+| `CDemoController` | `CDCController` | `CQtController` / `CQtModalController` |
+| `CDemoViewController` | `CDeductCreditVC` | `CQtEntryViewController` |
+| `DemoProperty.qml` | `VCProperty.qml` | `UIProperty` |
+| `DemoName.qml` | `VCName.qml` | - |
+
+Note that this is **not** textbook MVC, despite PDR's folders being literally
+`Model/ View/ Controller/`. The view controller is the piece textbook MVC does
+not have, and it is the one that earns its keep: the C++/QML boundary is
+string-keyed, across a DLL, across a thread, and the VC is the only file on the
+C++ side that knows any of that. Rename a QML id and exactly one file changes.
+`CDeductCreditVC` is the shape to copy - its entire body is a constructor
+naming the `.qml` plus an `OnQmlDidLoad()` attaching two clicked actions.
+
+The ratio is the giveaway: PDR has **380** `*Controller.h` against **96**
+`*VC.h`. Most controllers never front QML at all, which is only possible
+because the rules do not live in the adapter.
+
+> **Earlier versions of this demo did not do this.** Zoom and rotation were
+> `property real` on the root `Window`, QML applied its own clamp, and C++ was
+> told a button had been pressed without being told - or deciding - what it
+> meant. The [git history](../..) has that version if the contrast is useful.
+
+---
+
 ## Build and run
 
 The demo runs from its **own self-contained folder**, `mfc_qml_demo\bin_x64\`.
 Stage the runtime once, then build:
 
 ```bat
-cd arch_review\mfc_qml_demo
+cd qt-homework\mfc_qml_demo
 powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1
 msbuild MfcQmlDemo.vcxproj /p:Configuration=Debug /p:Platform=x64
 bin_x64\MfcQmlDemo.exe
@@ -77,7 +130,7 @@ id, which is the easiest way to watch the thread hop happen:
 [tid 40808] run() returned, ctor thread continues
 [tid 25128] context created -> 000002153CE26010      <- different thread
 [tid 25128] IQmlContext::load -> ok
-[tid 25128] bound? window=1 caption=1 imagePath=1 zoomIn=1 reset=1
+[tid 25128] bound? window=1 property=1 caption=1 imagePath=1 zoomIn=1 reset=1
 [tid 25128] reparented under 0000000000230B06
 ```
 
@@ -122,15 +175,18 @@ Three things the inventory taught me:
 | File | What to read it for |
 |---|---|
 | `src/QtKitHost.cpp` | The bridge. `LoadLibraryEx` &rarr; `createQtKit` &rarr; configure &rarr; `run(async)`. This is `QtKitWrapper.cpp` with everything non-essential removed. |
-| `src/MainFrame.cpp` | The MFC side: adopting the `HWND`, wiring bindings, and both thread hops. Marked with a hard `QT THREAD` / `MFC MAIN THREAD` divider. |
+| `src/MainFrame.cpp` | The MFC side and only the MFC side: menu, status strip, file dialog, layout. |
+| `src/DemoViewController.cpp` | The QML adapter: adopting the `HWND`, wiring bindings, and both thread hops. Marked with a hard `QT THREAD` / `MFC MAIN THREAD` divider. Holds no feature state - PDR's `CQtEntryViewController` in miniature. |
+| `src/DemoController.cpp` | The state and the rules: zoom clamps, the 90-degree step, and `PublishState()`. Knows nothing about QML ids or `HWND`s. PDR's `CQtController` in miniature. |
 | `src/DemoNames.h` + `qml/DemoName.qml` | The shared name table, mirrored on both sides. This is the whole binding contract. |
 | `qml/DemoWindow.qml` | The QML entry: `bindWindow`, `bindLabel`, `bindButton`, and `binding.clicked()`. |
+| `qml/DemoProperty.qml` | The shared state block, `bindProperty`. The root type must be `UIProperty`; see the note below. |
 | `src/DemoApp.cpp` | A plain `CWinApp`. Notable only for the DPI-awareness call, which matters more than it looks. |
 | `stage_runtime.ps1` | The runtime manifest, one commented group per dependency. Read this to learn what hosting QML actually costs. |
 
 ---
 
-## Seven things that cost me a build cycle each
+## Eight things that cost me a build cycle each
 
 These are the real findings. Every one of them presented as a silent failure or
 an access violation, never as a useful error message.
@@ -179,31 +235,40 @@ appears. This demo routes the URL through a hidden bound `Label` instead and
 binds `Image.source` to its text - the smallest channel that works with stock
 QtQuick types.
 
+**8. `bindProperty` needs a `UIProperty` root, not a `QtObject`.** This one
+looked like a packaging limitation and was not. Bind a plain `QtObject` full of
+declared properties and the *name* registers -
+`isObjectBound("demo.property")` returns **true** - but nothing leaves an
+`IUIProperty` behind it, so `context->property("demo.property")` reports
+`The id does not exist` and then faults. That asymmetry between `isObjectBound`
+and the accessor is the tell, and it is easy to misread as "loose files cannot
+do this". Declare the singleton as `UIProperty` (it comes from
+`import QtKit`) and both sides agree. Every one of the ~87 `*Property.qml`
+files in `skinQt` is a `UIProperty`; not one is a `QtObject`. **No `.rcc`
+packaging is involved** - this demo binds it from a loose file on disk.
+
 ---
 
 ## What this demo does not show
 
-**`bindProperty` / `IUIProperty`.** This is PDR's richest data channel: a QML
-`QtObject` full of declared properties, readable and writable from both sides
-(`skinQt/qml/TermOfUse/TOUProperty.qml` is the model). I could not get it to
-work from a loose-file entry. `isObjectBound("demo.property")` returns **true**
-while `context->property("demo.property")` reports `The id does not exist` and
-then faults - so the name registers but the `IUIProperty` accessor looks
-somewhere else. The same asymmetry killed a `pragma Singleton` version.
-
-My reading is that both need the entry to be a proper QML module compiled into
-`skinQt.rcc`, which is how every real PDR feature ships and is not something a
-standalone demo reproduces. **Treat this as unverified, not as a defect in
-QtKit** - PDR uses `bindProperty` in 118 places and it plainly works there.
-
-Because of that, zoom and rotation are QML-local state here. C++ is *told* when
-a button is pressed but does not own the number. In a real feature you would
-put both on a `bindProperty` object and C++ would own them outright.
-
-**Also absent:** the `IEventFilter` message hook that PDR installs per window to
-swallow `WM_SETCURSOR` and answer `WM_MOUSEACTIVATE`, the `MsgConverter` /
+**The `IEventFilter` message hook** that PDR installs per window to swallow
+`WM_SETCURSOR` and answer `WM_MOUSEACTIVATE`, the `MsgConverter` /
 `NotifierCenter` event plumbing, and unload/teardown beyond the minimum. See
 [../QTKIT_ARCHITECTURE.md](../QTKIT_ARCHITECTURE.md) sections 04 and 06.
+
+**Sub-view controllers.** A real feature splits into one
+`CQtEntryViewController` plus a `CQtSubViewController` per panel, attached with
+`AttachSubViewController()`. One window needs no such split.
+
+**`skinQt.rcc` packaging.** Shipping builds compile their QML into a resource
+and load `qrc:/qml/...`; every PDR view controller is constructed with both a
+loose path and an `qrc:` path and picks on `isRccFileReady()`. This demo only
+ever takes the loose-file branch.
+
+**Everything `IUIProperty` can carry beyond two numbers** - `setJsonAction` /
+`notifyJsonEvent` for structured payloads, and `setPropertyChangedAction` for
+the QML-writes-back direction. `DemoProperty.qml` is written one-way on
+purpose: C++ owns both values, so nothing in QML assigns to them.
 
 ---
 

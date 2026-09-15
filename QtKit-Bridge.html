@@ -505,6 +505,15 @@ hr.div{border:none;border-top:1px solid var(--rule);margin:0 0 52px}
 
   <div class="prose">
     <p>This is why <code>skinQt/AUTOMATION_ID_NAMING.md</code> and the <code>add-automation-id</code> skill exist, and why there are audit scripts (<code>audit_id_coverage.py</code>, <code>check_automation_id.py</code>) in the same folder. The names are load-bearing, so the repo polices them mechanically.</p>
+
+    <h3>The state block</h3>
+    <p>Those accessors carry one value each, which is the wrong shape for a feature&rsquo;s shared state. PDR&rsquo;s answer is a second pattern: one <code>UIProperty</code> singleton per feature &mdash; <code>skinQt/qml/VoiceClone/VCProperty.qml</code> and roughly 87 others &mdash; bound under a <b>single</b> name through <code>qmlContext.bindProperty(this, VCName.property)</code>, holding every value that crosses the boundary.</p>
+    <p>C++ reaches it with <code>m_pContext-&gt;property(name)</code> and typed setters and getters (<code>property("currentTimeMs", fMs)</code>, <code>propertyBool("hasVoiceCloneAudio")</code>). QML binds to those properties declaratively, so one write redraws every dependent item &mdash; no per-widget push, and traffic runs both ways through the same object. Each <code>*Property.qml</code> is paired with a <code>*Name.qml</code> holding the strings.</p>
+
+    <div class="note">
+      <span class="tag">The root type is load-bearing</span>
+      <p>A state block must be declared as <code>UIProperty</code>, not <code>QtObject</code>. A plain <code>QtObject</code> binds without complaint and <code>isObjectBound()</code> returns <b>true</b>, but nothing leaves an <code>IUIProperty</code> behind it &mdash; <code>context-&gt;property(name)</code> then reports <code>The id does not exist</code> and faults. That asymmetry between the guard and the accessor is the only symptom you get, and it reads convincingly like a packaging limitation. It is not: a loose <code>.qml</code> on disk binds a <code>UIProperty</code> fine, with no <code>.rcc</code> involved.</p>
+    </div>
   </div>
 </section>
 

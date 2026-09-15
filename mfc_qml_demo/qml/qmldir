@@ -1,1 +1,2 @@
 singleton DemoName 1.0 DemoName.qml
+singleton DemoProperty 1.0 DemoProperty.qml

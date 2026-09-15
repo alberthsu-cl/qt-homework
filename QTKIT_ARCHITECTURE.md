@@ -150,6 +150,42 @@ if (IsQmlBound("dpPlayBtn"))   // guard before every dereference
 `listView()`, `window()`, `textureview()`, ... — each mapping a string to an
 `IUI*` proxy.
 
+### The state block
+
+Those accessors carry one value each, which is the wrong shape for a feature's
+shared state. PDR's answer is a second pattern: one `UIProperty` singleton per
+feature, bound under a **single** name, holding everything that crosses the
+boundary.
+
+```qml
+// skinQt/qml/VoiceClone/VCProperty.qml  (~87 of these exist, one per feature)
+pragma Singleton
+UIProperty {
+    property bool hasVoiceCloneName:  false   // updated from the QML TextField
+    property bool hasVoiceCloneAudio: false   // updated from C++ backend
+    property real currentTimeMs:      0.0
+    Component.onCompleted: binding = qmlContext.bindProperty(this, VCName.property)
+}
+```
+
+```cpp
+auto& prop = m_pContext->property(VCName.property);
+prop.property("currentTimeMs", fMs);                    // typed setters
+const bool bReady = prop.propertyBool("hasVoiceCloneAudio");
+```
+
+QML binds declaratively to those properties, so C++ writes one value and every
+dependent item redraws itself — no per-widget push, and traffic runs both ways
+through the same object. Each `*Property.qml` is paired with a `*Name.qml`
+holding the strings, and controllers reach it through
+`CQtViewController`; see `src/ui/common/Qt/`.
+
+**The root type must be `UIProperty`, not `QtObject`.** A plain `QtObject`
+binds without complaint and `isObjectBound()` returns true, but no
+`IUIProperty` is left behind it — `context->property(name)` then reports
+`The id does not exist` and faults. The asymmetry between the two is the only
+symptom you get.
+
 ### Why the name may not resolve yet
 
 ```mermaid

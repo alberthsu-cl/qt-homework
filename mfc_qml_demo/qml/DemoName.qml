@@ -7,6 +7,9 @@ QtObject
 {
     property string window:         "demo.window"
 
+    // the shared state block - see DemoProperty.qml
+    property string property:       "demo.property"
+
     // C++ writes into these two
     property string caption:        "demo.caption"
     property string imagePath:      "demo.imagePath"

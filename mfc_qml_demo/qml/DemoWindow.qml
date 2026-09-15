@@ -26,10 +26,9 @@ Window
     color: "#14171c"
     title: "QML canvas"
 
-    // zoom and rotation are QML-local view state. C++ is told when they change
-    // but does not own them - see README.md, "What this demo does not show".
-    property real zoomFactor: 1.0
-    property int  rotationDeg: 0
+    // Zoom and rotation are NOT declared here. They live in DemoProperty.qml,
+    // C++ owns them, and this file only reads them. Everything below binds to
+    // DemoProperty.* and updates itself when the controller republishes.
 
     // --- the binding handshake ----------------------------------------------
     // Until this runs, context->window("demo.window") throws
@@ -131,8 +130,8 @@ Window
             asynchronous: false
             visible: imagePathHolder.text.length > 0 && status === Image.Ready
 
-            scale: root.zoomFactor
-            rotation: root.rotationDeg
+            scale: DemoProperty.zoomFactor
+            rotation: DemoProperty.rotationDeg
             Behavior on scale    { NumberAnimation { duration: 120 } }
             Behavior on rotation { NumberAnimation { duration: 160 } }
 
@@ -167,7 +166,8 @@ Window
         {
             anchors { verticalCenter: parent.verticalCenter; left: parent.left; leftMargin: 16 }
             color: "#9ba4b1"; font.pixelSize: 12; font.family: "Consolas"
-            text: "zoom " + root.zoomFactor.toFixed(2) + "x    rot " + root.rotationDeg + " deg"
+            text: "zoom " + DemoProperty.zoomFactor.toFixed(2) + "x    rot " + DemoProperty.rotationDeg + " deg"
+            // reads the C++-owned values; no local copy to drift out of sync
         }
 
         Row
@@ -178,9 +178,11 @@ Window
             // QML -> C++, the EVENT CHANNEL.
             //
             // binding.clicked() invokes whatever C++ passed to setClickedAction().
-            // The local view change and the notification are separate lines on
-            // purpose: the first is QML's own business, the second is the part
-            // that crosses the boundary and lands in the MFC status strip.
+            // That is ALL these buttons do. They report intent and decide
+            // nothing: CDemoController applies the clamp and the 90-degree step
+            // and writes the result back into DemoProperty, which these
+            // bindings then pick up. Before the controller layer existed, each
+            // handler mutated the number itself and C++ only counted clicks.
             Button
             {
                 text: "Zoom out"
@@ -189,7 +191,6 @@ Window
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomOutButton)
                 onClicked:
                 {
-                    root.zoomFactor = Math.max(0.1, root.zoomFactor - 0.25)
                     binding.clicked()
                 }
             }
@@ -202,7 +203,6 @@ Window
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomInButton)
                 onClicked:
                 {
-                    root.zoomFactor = Math.min(4.0, root.zoomFactor + 0.25)
                     binding.clicked()
                 }
             }
@@ -215,7 +215,6 @@ Window
                 Component.onDestruction: qmlContext.unbind(this, DemoName.rotateButton)
                 onClicked:
                 {
-                    root.rotationDeg = (root.rotationDeg + 90) % 360
                     binding.clicked()
                 }
             }
@@ -228,8 +227,6 @@ Window
                 Component.onDestruction: qmlContext.unbind(this, DemoName.resetButton)
                 onClicked:
                 {
-                    root.zoomFactor = 1.0
-                    root.rotationDeg = 0
                     binding.clicked()
                 }
             }

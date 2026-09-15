@@ -1,5 +1,6 @@
 #pragma once
 #include <afxwin.h>
+#include <memory>
 #include <string>
 
 // Menu command ids (the menu is built in code - no .rc file in this demo).
@@ -17,10 +18,21 @@
 // wParam values for WM_APP_QML_CLICK - which QML button was pressed.
 enum QmlClick { kClickZoomIn = 1, kClickZoomOut, kClickRotate, kClickReset };
 
+class CDemoController;
+class CDemoViewController;
+
+// The MFC half of the demo, and nothing else: a menu, a status strip, a file
+// dialog and a layout. It owns the controller, the controller owns the state,
+// and the view controller owns everything QML-shaped.
+//
+// It used to own all three jobs at once - loading the .qml, adopting the HWND
+// and wiring bindings all lived in this class, while the zoom and rotation it
+// was reporting on actually lived in QML.
 class CMainFrame : public CFrameWnd
 {
 public:
     CMainFrame();
+    ~CMainFrame() override;   // out-of-line: the unique_ptr members are incomplete here
 
 protected:
     afx_msg int  OnCreate(LPCREATESTRUCT lpcs);
@@ -32,20 +44,13 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    // Runs on the Qt thread once IQmlContext exists: kicks off the .qml load.
-    void OnQtReady();
-
-    // Runs on the Qt thread after the .qml tree is fully built: pulls the QML
-    // window's HWND out, reparents it, and wires every binding.
-    void AdoptQmlWindow();
-
     void LayoutChildren();
     void PushImageToQml(const CString& strPath);
 
 private:
-    CStatic     m_wndStatus;            // bottom strip, MFC-owned
-    HWND        m_hQmlWnd{ nullptr };   // the QQuickWindow, now our child
-    std::string m_strQmlEntry;          // absolute path of the loaded .qml
-    bool        m_bQmlReady{ false };
-    int         m_nClickCount{ 0 };
+    CStatic m_wndStatus;        // bottom strip, MFC-owned
+    int     m_nClickCount{ 0 };
+
+    std::unique_ptr<CDemoController>     m_pController;
+    std::unique_ptr<CDemoViewController> m_pViewController;
 };

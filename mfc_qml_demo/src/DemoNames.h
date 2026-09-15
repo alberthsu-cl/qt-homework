@@ -18,6 +18,11 @@ struct DemoNames
     // bindWindow - the QML Window whose HWND we reparent into the MFC frame
     const char* window        = "demo.window";
 
+    // bindProperty - the shared state block (qml/DemoProperty.qml).
+    // C++ owns zoomFactor and rotationDeg and writes them through
+    // context->property(DemoName.property).property("zoomFactor", 1.25f).
+    const char* property      = "demo.property";
+
     // C++ -> QML
     const char* caption       = "demo.caption";   // bindLabel, we write .text()
     const char* imagePath     = "demo.imagePath"; // bindLabel, we write the file URL
