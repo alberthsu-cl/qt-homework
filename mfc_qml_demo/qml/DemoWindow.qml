@@ -171,15 +171,23 @@ Window
 
             // QML -> C++, the EVENT CHANNEL.
             //
+            // These were Controls Buttons with a text label until the icons
+            // arrived. Note how little the swap touched: DemoImageButton is
+            // itself a Button underneath, so every line below the `tip` is
+            // byte-for-byte what a text button needed. The binding contract
+            // does not know or care that there is now an SVG on top - which is
+            // the point of keeping the root a Button. See DemoImageButton.qml.
+            //
             // binding.clicked() invokes whatever C++ passed to setClickedAction().
             // That is ALL these buttons do. They report intent and decide
             // nothing: CDemoController applies the clamp and the 90-degree step
             // and writes the result back into DemoProperty, which these
             // bindings then pick up. Before the controller layer existed, each
             // handler mutated the number itself and C++ only counted clicks.
-            Button
+            DemoImageButton
             {
-                text: "Zoom out"
+                source: "images/zoom_out.svg"
+                tip:    "Zoom out"
                 property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.zoomOutButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomOutButton)
@@ -189,9 +197,10 @@ Window
                 }
             }
 
-            Button
+            DemoImageButton
             {
-                text: "Zoom in"
+                source: "images/zoom_in.svg"
+                tip:    "Zoom in"
                 property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.zoomInButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomInButton)
@@ -201,9 +210,10 @@ Window
                 }
             }
 
-            Button
+            DemoImageButton
             {
-                text: "Rotate 90"
+                source: "images/rotate_90.svg"
+                tip:    "Rotate 90"
                 property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.rotateButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.rotateButton)
@@ -213,9 +223,10 @@ Window
                 }
             }
 
-            Button
+            DemoImageButton
             {
-                text: "Reset"
+                source: "images/reset.svg"
+                tip:    "Reset"
                 property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.resetButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.resetButton)

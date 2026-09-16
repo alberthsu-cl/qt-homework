@@ -158,7 +158,7 @@ standalone.
 | `Qt6Network`, `Qt6OpenGL`, `Qt6Svg`, `Qt6Qml{Meta,Models,WorkerScript}` | 4.9 MB | Pulled in by QtKit's network cache, the scene-graph backend, and the SVG image plugin. |
 | `Qt6QuickControls2*`, `Qt6QuickTemplates2` | 3.4 MB | Only because the QML uses `Button` and `Label`. Stick to plain QtQuick items and this group goes away. |
 | `platforms\qwindows.dll` | 1.0 MB | **Mandatory.** Without this exact path Qt aborts with "no Qt platform plugin could be initialized" - the classic Qt packaging mistake. |
-| `imageformats\*.dll` (5) | 2.0 MB | One per format you open. PNG and BMP are built into `Qt6Gui` and need no plugin. |
+| `imageformats\*.dll` (5) | 2.0 MB | One per format you open. PNG and BMP are built into `Qt6Gui` and need no plugin. `qsvg.dll` is no longer optional, though: the four button icons are SVGs, so the UI itself stops rendering without it. |
 | `qml\QtQuick\**` (84 files) | 2.0 MB | Module resolution for `import QtQuick`. Each module needs its plugin DLL **and** its `qmldir` / `.qmltypes`; DLLs alone leave Qt unable to resolve the import. 70 of those files are the Basic style's `.qml` sources. |
 | `mfc140ud.dll` | 10.7 MB | Debug MFC. Release swaps in `mfc140u.dll`. |
 | `MSVCP140*`, `VCRUNTIME140*` | 2.1 MB | The C++ runtime, debug and release. |
@@ -189,6 +189,9 @@ Three things the inventory taught me:
 | `src/DemoNames.h` + `qml/DemoName.qml` | The shared name table, mirrored on both sides. This is the whole binding contract. |
 | `qml/DemoWindow.qml` | The QML entry: `bindWindow`, `bindLabel`, `bindImage`, `bindButton`, and `binding.clicked()`. |
 | `qml/DemoProperty.qml` | The shared state block, `bindProperty`. The root type must be `UIProperty`; see the note below. |
+| `qml/DemoImageButton.qml` | The image button, a miniature of `skinQt/qml/Widgets/TintImageButton.qml`. Read it for why the root stays a Controls `Button`. |
+| `qml/DemoTintEffect.qml` + `qml/shaders/` | The `ShaderEffect` that recolours a white icon per state, and the two baked `.qsb` shaders it needs. |
+| `qml/images/*.svg` | Four hand-drawn monochrome icons. They are tint masks, not finished art - only their alpha survives. |
 | `src/DemoApp.cpp` | A plain `CWinApp`. Notable only for the DPI-awareness call, which matters more than it looks. |
 | `stage_runtime.ps1` | The runtime manifest, one commented group per dependency. Read this to learn what hosting QML actually costs. |
 
@@ -277,6 +280,52 @@ do this". Declare the singleton as `UIProperty` (it comes from
 `import QtKit`) and both sides agree. Every one of the ~87 `*Property.qml`
 files in `skinQt` is a `UIProperty`; not one is a `QtObject`. **No `.rcc`
 packaging is involved** - this demo binds it from a loose file on disk.
+
+---
+
+## How the buttons are built
+
+The four controls are icon buttons, and PDR offers two patterns for that. The
+demo takes the newer one; the choice is worth understanding because the older
+pattern is still all over `skinQt`.
+
+| | `ImageButton.qml` (legacy) | `TintImageButton.qml` (used here) |
+|---|---|---|
+| Art per button | four PNGs - `_n` `_h` `_p` `_d` - doubled again as `_2x` for high DPI | **one** monochrome SVG |
+| How state shows | swaps the file on hover/press/disable | a `ShaderEffect` recolours the same texture |
+| How art is loaded | `image://Media/...`, a C++ `IUIImageProvider` | a loose file next to the `.qml` |
+| Extra runtime cost | the provider must be registered from C++ | two `.qsb` files, 2.2 KB |
+
+The second column is why this demo can have icon buttons at all. Its
+`ICreateFactory` returns `nullptr` for every delegate, so there is no image
+provider and the `image://Media/` scheme resolves to nothing. A tinted SVG
+needs no provider.
+
+Three things worth knowing before copying this:
+
+- **The root must stay a Controls `Button`.** `bindButton()` attaches to it and
+  `IUIButton::setClickedAction()` rides the `Button`'s own `clicked` signal.
+  Rebuild it as an `Item` + `MouseArea` and the event channel dies while
+  `isObjectBound()` keeps returning true - failure mode #7 and #8 all over again.
+  Everything below `tip:` in `DemoWindow.qml` is unchanged from the text-button
+  version, which is the proof that the swap is skin-deep.
+- **`ShaderEffect` costs no new DLL.** It lives in `Qt6Quick.dll`, already
+  staged. The obvious Qt 6 alternative, `MultiEffect`'s `colorization`, would
+  have pulled in `Qt6QuickEffects.dll` and its whole QML module.
+- **`.qsb` is compiled bytecode.** `src` and `tint` in `DemoTintEffect.qml` are
+  the names `tint.frag.qsb` was built against. Rename either and the shader
+  silently renders nothing - there is no source for Qt to re-resolve against.
+- **`DemoImageButton` needs no `qmldir` entry.** A `.qml` file in the same
+  folder as its user resolves through QML's implicit directory import, and that
+  keeps working even though `qml/` already has a `qmldir`. I assumed the
+  opposite, listed both components, then tested it by taking them back out -
+  the QML still loads and every id still binds. Every `qmldir` in `skinQt`
+  lists singletons and nothing else, which is the same answer from the other
+  direction.
+
+Verified from the running process rather than by eye: sampling the icon pixels
+gives `195,204,216` - exactly `colorNormal` - and no pure white anywhere, so
+the white SVG really is being recoloured and not merely drawn.
 
 ---
 

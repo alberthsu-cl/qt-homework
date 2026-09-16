@@ -28,6 +28,7 @@
 *.cpp       text
 *.h         text
 *.qml       text
+*.svg       text
 *.js        text
 *.qrc       text
 *.pro       text
@@ -52,6 +53,8 @@ CMakeLists.txt text
 *.pdb       binary
 *.rcc       binary
 *.qm        binary
+# Baked Qt shader bytecode (qsb). Must never be line-ending converted.
+*.qsb       binary
 
 # -----------------------------------------------------------------------------
 #  GitHub language stats
