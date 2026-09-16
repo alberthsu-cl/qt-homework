@@ -25,7 +25,7 @@ struct DemoNames
 
     // C++ -> QML
     const char* caption       = "demo.caption";   // bindLabel, we write .text()
-    const char* imagePath     = "demo.imagePath"; // bindLabel, we write the file URL
+    const char* photo         = "demo.photo";     // bindImage, we write the file URL
 
     // QML -> C++   (bindButton, QML calls binding.clicked())
     const char* zoomInButton  = "demo.zoomInButton";

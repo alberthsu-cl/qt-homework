@@ -37,26 +37,6 @@ Window
     Component.onCompleted:   binding = qmlContext.bindWindow(this, DemoName.window)
     Component.onDestruction: qmlContext.unbind(this, DemoName.window)
 
-    // The image URL arrives from C++ as TEXT on this invisible Label, and the
-    // Image below binds its source to it.
-    //
-    // Why not just context->image("demo.photo").source(url)? Because QtKit's
-    // bindImage / IUIImage targets QtKit's OWN image item types (FileImageItem,
-    // StateImageItem, WebpImageItem - the ones PDR's skinQt widgets are built
-    // from), not QtQuick's plain Image. Bind a QtQuick.Image and the source()
-    // call is silently dropped: isObjectBound() says true, no error is logged,
-    // and the picture never appears. A bound Label is the smallest channel that
-    // works with stock QtQuick types.
-    Label
-    {
-        id: imagePathHolder
-        visible: false
-        text: ""
-        property var binding
-        Component.onCompleted:   binding = qmlContext.bindLabel(this, DemoName.imagePath)
-        Component.onDestruction: qmlContext.unbind(this, DemoName.imagePath)
-    }
-
     // =========================================================================
     //  header - a Label whose text C++ writes
     // =========================================================================
@@ -119,16 +99,30 @@ Window
         }
 
         // C++ -> QML, channel 2:  context->image("demo.photo").source("file:///...")
+        //
+        // IUIImage::source() does NOT write through to this Image's own
+        // `source` property the way IUILabel::text() writes through to a
+        // Label's `text`. It writes to the UIImage proxy object that
+        // bindImage() returns, and QML has to read it back declaratively.
+        // That is the whole trick: `binding` is typed UIImage (it comes from
+        // import QtKit) and `source` reads binding.source. Miss the readback
+        // and the call looks silently dropped - isObjectBound() still says
+        // true and nothing is logged. All 10 bindImage sites in skinQt do
+        // exactly this; see AboutDialogContentRegion.qml for the smallest one.
         Image
         {
             id: photo
             anchors.centerIn: parent
             width: parent.width - 48
             height: parent.height - 48
-            source: imagePathHolder.text
             fillMode: Image.PreserveAspectFit
             asynchronous: false
-            visible: imagePathHolder.text.length > 0 && status === Image.Ready
+
+            property UIImage binding
+            source: binding ? binding.source : ""
+            visible: status === Image.Ready
+            Component.onCompleted:   binding = qmlContext.bindImage(this, DemoName.photo)
+            Component.onDestruction: qmlContext.unbind(this, DemoName.photo)
 
             scale: DemoProperty.zoomFactor
             rotation: DemoProperty.rotationDeg

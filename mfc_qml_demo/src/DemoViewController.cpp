@@ -70,11 +70,11 @@ void CDemoViewController::OnQmlDidLoad()
     if (!pContext)
         return;
 
-    QtKitHost::Log("bound? window=%d property=%d caption=%d imagePath=%d zoomIn=%d reset=%d",
+    QtKitHost::Log("bound? window=%d property=%d caption=%d photo=%d zoomIn=%d reset=%d",
                    (int)pContext->isObjectBound(DemoName.window),
                    (int)pContext->isObjectBound(DemoName.property),
                    (int)pContext->isObjectBound(DemoName.caption),
-                   (int)pContext->isObjectBound(DemoName.imagePath),
+                   (int)pContext->isObjectBound(DemoName.photo),
                    (int)pContext->isObjectBound(DemoName.zoomInButton),
                    (int)pContext->isObjectBound(DemoName.resetButton));
 
@@ -209,13 +209,12 @@ void CDemoViewController::PushImage(const std::string& strUrlUtf8,
     // We are on the MFC thread here, so hop to the Qt thread before touching
     // any IUI* proxy. This is the mirror of the PostMessage going the other way.
     //
-    // These two stay on bindLabel rather than moving into DemoProperty: a
-    // caption and an image URL are view output, not state the controller
-    // reasons about. Keeping them here also leaves all four binding types
-    // visible in one demo.
+    // These two stay out of DemoProperty: a caption and an image URL are
+    // view output, not state the controller reasons about. Keeping them here
+    // also leaves all five binding types visible in one demo.
     pContext->runOnQtThread([pContext, strUrlUtf8, strCaptionUtf8]() {
-        if (pContext->isObjectBound(DemoName.imagePath))
-            pContext->label(DemoName.imagePath).text(strUrlUtf8.c_str());
+        if (pContext->isObjectBound(DemoName.photo))
+            pContext->image(DemoName.photo).source(strUrlUtf8.c_str());
         if (pContext->isObjectBound(DemoName.caption))
             pContext->label(DemoName.caption).text(strCaptionUtf8.c_str());
         QtKitHost::Log("pushed image: %s", strUrlUtf8.c_str());

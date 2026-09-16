@@ -20,7 +20,7 @@ claim below was verified at runtime, not by inspection.
 
 | | Direction | Mechanism |
 |---|---|---|
-| **File > Open Image...** puts a picture on the QML canvas | C++ &rarr; QML | `context->label(name).text(fileUrl)` on the Qt thread |
+| **File > Open Image...** puts a picture on the QML canvas | C++ &rarr; QML | `context->image(name).source(fileUrl)` on the Qt thread |
 | The caption reads `C++ pushed: <filename>` | C++ &rarr; QML | same, second bound Label |
 | Clicking a QML button updates the native status strip | QML &rarr; C++ | `context->button(name).setClickedAction(...)`, then `PostMessage` to the MFC thread |
 | Zoom / Rotate transform the image | QML &rarr; C++ &rarr; QML | the button reports intent, `CDemoController` applies the rule, `context->property(name).property("zoomFactor", f)` writes the result back, and QML's own bindings redraw |
@@ -97,8 +97,10 @@ because the rules do not live in the adapter.
 
 ## Build and run
 
-The demo runs from its **own self-contained folder**, `mfc_qml_demo\bin_x64\`.
-Stage the runtime once, then build:
+The demo *runs* from its **own self-contained folder**, `mfc_qml_demo\bin_x64\`
+- once staged, it loads zero modules from `bin_x64\PowerDirector\`. It does not
+*build* standalone; see [the two out-of-folder dependencies](#housekeeping)
+below. Stage the runtime once, then build:
 
 ```bat
 cd qt-homework\mfc_qml_demo
@@ -112,10 +114,16 @@ bin_x64\MfcQmlDemo.exe
 Re-run it after `emma` updates QtKit or the Qt6 DLLs; `-Clean` wipes the staged
 files first, `-Verify` prints the resulting tree.
 
-Open it in Visual Studio 2022 and F5 works too. There is **no Qt SDK
-requirement** - the demo includes `src/external include/QtKit/Interface.h` and
-reaches the DLL through `LoadLibraryEx`, so it needs only what a successful PDR
-build already put on disk.
+Open it in Visual Studio 2022 and F5 works too (there is no `.sln`; VS builds
+a bare `.vcxproj` fine). There is **no Qt SDK requirement** - the only QtKit
+header is `Interface.h`, and the DLL is reached through `LoadLibraryEx`, so the
+demo needs only what a successful PDR build already put on disk.
+
+That header is **not** copied into this folder. It is the PDR working copy's
+own `src\external include\QtKit\Interface.h`, picked up through
+`AdditionalIncludeDirectories = $(ProjectDir)src;$(ProjectDir)..\..\src`. Move
+this folder somewhere that is not two levels below a PDR checkout and the
+compile breaks on the missing include.
 
 Optional: pass an image path to skip the file dialog.
 
@@ -179,7 +187,7 @@ Three things the inventory taught me:
 | `src/DemoViewController.cpp` | The QML adapter: adopting the `HWND`, wiring bindings, and both thread hops. Marked with a hard `QT THREAD` / `MFC MAIN THREAD` divider. Holds no feature state - PDR's `CQtEntryViewController` in miniature. |
 | `src/DemoController.cpp` | The state and the rules: zoom clamps, the 90-degree step, and `PublishState()`. Knows nothing about QML ids or `HWND`s. PDR's `CQtController` in miniature. |
 | `src/DemoNames.h` + `qml/DemoName.qml` | The shared name table, mirrored on both sides. This is the whole binding contract. |
-| `qml/DemoWindow.qml` | The QML entry: `bindWindow`, `bindLabel`, `bindButton`, and `binding.clicked()`. |
+| `qml/DemoWindow.qml` | The QML entry: `bindWindow`, `bindLabel`, `bindImage`, `bindButton`, and `binding.clicked()`. |
 | `qml/DemoProperty.qml` | The shared state block, `bindProperty`. The root type must be `UIProperty`; see the note below. |
 | `src/DemoApp.cpp` | A plain `CWinApp`. Notable only for the DPI-awareness call, which matters more than it looks. |
 | `stage_runtime.ps1` | The runtime manifest, one commented group per dependency. Read this to learn what hosting QML actually costs. |
@@ -226,14 +234,37 @@ fixes it. PDR is DPI-aware via its manifest and feeds QtKit
 wins over `IUIWindow::setPosition()`, the scene stays at its declared size, and
 anchored content renders below the visible area. Let the host size it.
 
-**7. `bindImage` does not work on a QtQuick `Image`.** `IUIImage::source()`
-targets QtKit's *own* image item types - `FileImageItem`, `StateImageItem`,
-`WebpImageItem`, the ones PDR's `skinQt/qml/Widgets` are built from. Bind a
-stock `QtQuick.Image` and the `source()` call is silently dropped:
-`isObjectBound()` returns true, nothing is logged, and the picture never
-appears. This demo routes the URL through a hidden bound `Label` instead and
-binds `Image.source` to its text - the smallest channel that works with stock
-QtQuick types.
+**7. `bindImage` works on a stock `QtQuick.Image` - but only if QML reads the
+value back.** `IUIImage::source()` does *not* write through to the item's own
+`source` property the way `IUILabel::text()` writes through to a `Label`'s
+`text`. It sets `source` on the `UIImage` proxy that `bindImage()` returns, and
+QML has to bind to it declaratively:
+
+```qml
+Image {
+    property UIImage binding                    // UIImage comes from import QtKit
+    source: binding ? binding.source : ""       // <- the readback. Omit it and nothing appears.
+    Component.onCompleted:   binding = qmlContext.bindImage(this, DemoName.photo)
+    Component.onDestruction: qmlContext.unbind(this, DemoName.photo)
+}
+```
+
+Miss that one line and the call looks silently dropped: `isObjectBound()`
+returns true, nothing is logged, and the picture never appears - the same shape
+as #8, where the bind succeeds and the effect goes nowhere. The asymmetry with
+`bindLabel`, which needs no readback, is what makes it easy to misdiagnose.
+
+**All 10 `bindImage` sites in `skinQt` use this readback**, and all 10 bind a
+plain `QtQuick.Image` (or a `ScaledImage` wrapping one);
+`Dialog/AboutDialog/AboutDialogContentRegion.qml` is the smallest example.
+QtKit does register its own `FileImageItem` / `StateImageItem` /
+`WebpImageItem`, but **`skinQt` uses none of them** - zero occurrences across
+1216 `.qml` files - so they are not required for `bindImage` and never were.
+
+> An earlier revision of this demo routed the URL through a hidden bound
+> `Label` and blamed the missing picture on those QtKit-only item types. That
+> diagnosis was wrong; the readback was the whole problem. The workaround is
+> gone and the `demo.imagePath` name with it.
 
 **8. `bindProperty` needs a `UIProperty` root, not a `QtObject`.** This one
 looked like a packaging limitation and was not. Bind a plain `QtObject` full of
@@ -274,10 +305,30 @@ purpose: C++ owns both values, so nothing in QML assigns to them.
 
 ## Housekeeping
 
-`bin_x64/` (staged runtime + build output) and `build/` (intermediates) are
-both gitignored by this folder's own `.gitignore`. Nothing in either is a
-source of truth - delete them and re-run `stage_runtime.ps1` plus a build.
+**`qt-homework/` is its own git repository**, separate from the PDR repo it
+sits inside. Two consequences worth knowing before you go looking for a change
+you just made:
 
-Earlier revisions of this demo built into `bin_x64\PowerDirector\`. Don't:
-that folder is **force-tracked** in this repo despite the root `.gitignore`, so
-stray build output there shows up as a repo modification.
+- `git status` at the PDR root reports **clean** no matter what you edit here.
+  Run git from `qt-homework/`, not from the PDR checkout.
+- The PDR working copy hides this tree through `.git/info/exclude`, which is
+  **local and uncommitted**. A fresh PDR clone has no such line, so there
+  `qt-homework/` shows up as an untracked directory.
+
+`bin_x64/` (staged runtime + build output) and `build/` (intermediates) are
+gitignored by **`qt-homework/.gitignore`** (lines 31-32) - the repo root, one
+level up. There is no `.gitignore` in `mfc_qml_demo/` at all, so copy this
+folder out on its own and it carries no ignore rules: the next `git add`
+sweeps in 56 MB of staged Qt runtime.
+
+Nothing in `bin_x64/` or `build/` is a source of truth - delete them and re-run
+`stage_runtime.ps1` plus a build.
+
+**The two things this folder reaches outside itself for** are the include path
+above (`..\..\src`, for `Interface.h`) and `stage_runtime.ps1`'s source folder
+(`bin_x64\PowerDirector\`). Both need a PDR checkout two levels up.
+
+Earlier revisions of this demo built into PDR's own `bin_x64\PowerDirector\`.
+Don't: that folder is **force-tracked in the PDR repo** despite its root
+`.gitignore`, so stray build output there shows up as a modification over
+there - in a repo whose `git status` you may not even be watching.

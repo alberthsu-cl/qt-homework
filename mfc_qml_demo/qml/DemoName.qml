@@ -12,7 +12,7 @@ QtObject
 
     // C++ writes into these two
     property string caption:        "demo.caption"
-    property string imagePath:      "demo.imagePath"
+    property string photo:          "demo.photo"
 
     // these four report back to C++
     property string zoomInButton:   "demo.zoomInButton"
