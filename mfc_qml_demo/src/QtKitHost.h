@@ -52,7 +52,10 @@ public:
 
     // Directory the .exe lives in, with a trailing backslash, UTF-8.
     // QtKit.dll, the Qt6 DLLs and platforms\qwindows.dll are all expected here,
-    // which is why this demo builds straight into bin_x64\PowerDirector\.
+    // which is why the demo builds into its OWN bin_x64\ and stages a private
+    // copy of the runtime there (stage_runtime.ps1). It deliberately does NOT
+    // build into PDR's bin_x64\PowerDirector\: that folder is force-tracked in
+    // the PDR repo, so output there shows up as a repo modification.
     const std::string& ExeDir() const { return m_strExeDir; }
 
     // Loads a .qml entry on the Qt thread and calls onLoaded once the WHOLE

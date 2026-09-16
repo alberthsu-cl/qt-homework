@@ -12,6 +12,7 @@
 // file changes; CDemoController never learns that QML exists.
 //
 #include <windows.h>
+#include <atomic>
 #include <string>
 
 class CDemoController;
@@ -49,7 +50,17 @@ private:
     HWND             m_hNotify{ nullptr };       // the MFC frame, not owned
 
     // QML plumbing - the only state a view controller is allowed to keep.
-    HWND        m_hQmlWnd{ nullptr };
-    std::string m_strQmlEntry;
-    bool        m_bQmlReady{ false };
+    //
+    // m_hQmlWnd and m_bQmlReady are atomic for the same reason CDemoController's
+    // two values are: they are WRITTEN on the Qt thread (OnQmlDidLoad) and READ
+    // on the MFC thread (OnSize -> SetViewportSize, the file dialog ->
+    // PushImage), and Dismiss() writes them back from the MFC thread at
+    // teardown. Neither is part of a larger invariant, so per-value atomicity
+    // is enough - no lock needed.
+    //
+    // m_strQmlEntry needs no such treatment: it is written once on the Qt
+    // thread before m_bQmlReady is ever set, and read only by Dismiss().
+    std::atomic<HWND> m_hQmlWnd{ nullptr };
+    std::string       m_strQmlEntry;
+    std::atomic<bool> m_bQmlReady{ false };
 };

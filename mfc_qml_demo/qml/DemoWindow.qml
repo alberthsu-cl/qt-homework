@@ -33,7 +33,7 @@ Window
     // --- the binding handshake ----------------------------------------------
     // Until this runs, context->window("demo.window") throws
     // QmlObjectNoBoundError on the C++ side, and isObjectBound() returns false.
-    property var binding
+    property UIWindow binding
     Component.onCompleted:   binding = qmlContext.bindWindow(this, DemoName.window)
     Component.onDestruction: qmlContext.unbind(this, DemoName.window)
 
@@ -56,7 +56,7 @@ Window
             font.pixelSize: 14
             text: "Use  File > Open Image...  in the native MFC menu above"
 
-            property var binding
+            property UILabel binding
             Component.onCompleted:   binding = qmlContext.bindLabel(this, DemoName.caption)
             Component.onDestruction: qmlContext.unbind(this, DemoName.caption)
         }
@@ -180,7 +180,7 @@ Window
             Button
             {
                 text: "Zoom out"
-                property var binding
+                property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.zoomOutButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomOutButton)
                 onClicked:
@@ -192,7 +192,7 @@ Window
             Button
             {
                 text: "Zoom in"
-                property var binding
+                property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.zoomInButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.zoomInButton)
                 onClicked:
@@ -204,7 +204,7 @@ Window
             Button
             {
                 text: "Rotate 90"
-                property var binding
+                property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.rotateButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.rotateButton)
                 onClicked:
@@ -216,7 +216,7 @@ Window
             Button
             {
                 text: "Reset"
-                property var binding
+                property UIButton binding
                 Component.onCompleted:   binding = qmlContext.bindButton(this, DemoName.resetButton)
                 Component.onDestruction: qmlContext.unbind(this, DemoName.resetButton)
                 onClicked:
