@@ -334,7 +334,7 @@ the white SVG really is being recoloured and not merely drawn.
 **The `IEventFilter` message hook** that PDR installs per window to swallow
 `WM_SETCURSOR` and answer `WM_MOUSEACTIVATE`, the `MsgConverter` /
 `NotifierCenter` event plumbing, and unload/teardown beyond the minimum. See
-[../QTKIT_ARCHITECTURE.md](../QTKIT_ARCHITECTURE.md) sections 04 and 06.
+[../doc/QTKIT_ARCHITECTURE.md](../doc/QTKIT_ARCHITECTURE.md) sections 04 and 06.
 
 **Sub-view controllers.** A real feature splits into one
 `CQtEntryViewController` plus a `CQtSubViewController` per panel, attached with

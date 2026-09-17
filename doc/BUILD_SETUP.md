@@ -38,11 +38,11 @@ libraries in it are distributed through **eModule**, never through git:
 `strmbase*` files.
 
 A clean machine has **no such directory at all**. The manifest that drives the
-download is [`emma.yaml`](../emma.yaml) at the repo root — see lines 270–280 for
+download is [`emma.yaml`](../../emma.yaml) at the repo root — see lines 270–280 for
 the entries that target `src\external include\x64`.
 
 This is already written up in
-[`docs/unit-testing/RUNNER-SETUP.md` §2.1](../docs/unit-testing/RUNNER-SETUP.md),
+[`docs/unit-testing/RUNNER-SETUP.md` §2.1](../../docs/unit-testing/RUNNER-SETUP.md),
 which quotes the exact error text.
 
 ## The fix
@@ -152,7 +152,7 @@ the PowerShell one does not.
 
 ## Reference: what else a fresh machine needs
 
-From [`docs/unit-testing/RUNNER-SETUP.md`](../docs/unit-testing/RUNNER-SETUP.md):
+From [`docs/unit-testing/RUNNER-SETUP.md`](../../docs/unit-testing/RUNNER-SETUP.md):
 
 | Tool | Verify with |
 |---|---|
