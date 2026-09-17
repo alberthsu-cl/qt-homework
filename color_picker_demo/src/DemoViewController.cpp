@@ -159,11 +159,12 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
     // button reports that it was pressed; the controller owns what that means.
     // Before this layer existed, QML clamped the zoom itself and C++ only
     // counted clicks.
-    using Action = void (CDemoController::*)();
-    struct { const char* name; QmlClick code; Action fn; } kButtons[] = {
-        { DemoName.openPickerButton, kClickOpenPicker, &CDemoController::BeginColorEdit },
-        { DemoName.resetButton,      kClickReset,      &CDemoController::ResetPendingColor },
-        { DemoName.cancelButton,     kClickCancel,     &CDemoController::CancelColorEdit },
+    struct { const char* name; QmlClick code; } kButtons[] = {
+        { DemoName.openPickerButton, kClickOpenPicker },
+        { DemoName.resetButton,      kClickReset },
+        { DemoName.cancelButton,     kClickCancel },
+        { DemoName.addCustomButton,  kClickAddCustom },
+        { DemoName.applyButton,      kClickApply },
     };
 
     for (const auto& b : kButtons)
@@ -174,34 +175,13 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
             continue;
         }
         const QmlClick code = b.code;
-        const Action   fn   = b.fn;
-        pContext->button(b.name).setClickedAction([this, code, fn]() {
-            // Already on the Qt thread, which is where IUIProperty writes have
-            // to happen - so the controller can publish without hopping.
-            (m_pController->*fn)();
-            // The MFC status strip is a different thread's business.
+        pContext->button(b.name).setClickedAction([this, code]() {
+            // Keep QtKit callbacks minimal. In particular, do not read or
+            // write IUIProperty here: high-frequency updates and direct Apply
+            // handling can invalidate QtKit's internal callback container.
             ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
         });
     }
-
-    // QtKit is unstable when QML calls a C++ button callback for every HSV
-    // mouse move. The preview remains entirely in QML while editing. These
-    // two low-frequency actions take one property snapshot at user intent
-    // boundaries, so the controller receives only saved or applied values.
-    const auto wireColorSnapshot = [this, pContext](const char* name, QmlClick code, bool apply) {
-        if (!pContext->isObjectBound(name) || !pContext->isObjectBound(DemoName.property))
-            return;
-        pContext->button(name).setClickedAction([this, pContext, code, apply]() {
-            m_pController->SetPendingColorHex(pContext->property(DemoName.property).propertyString("colorHex"));
-            if (apply)
-                m_pController->ApplyColorEdit();
-            else
-                m_pController->AddCustomColor();
-            ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
-        });
-    };
-    wireColorSnapshot(DemoName.addCustomButton, kClickAddCustom, false);
-    wireColorSnapshot(DemoName.applyButton, kClickApply, true);
 }
 
 // =============================================================================
@@ -240,5 +220,21 @@ void CDemoViewController::PushImage(const std::string& strUrlUtf8,
         if (pContext->isObjectBound(DemoName.caption))
             pContext->label(DemoName.caption).text(strCaptionUtf8.c_str());
         QtKitHost::Log("pushed image: %s", strUrlUtf8.c_str());
+    });
+}
+
+void CDemoViewController::SynchronizeAppliedColor()
+{
+    IQmlContext* pContext = QtKitHost::Inst().Context();
+    if (!pContext || !m_bQmlReady)
+        return;
+
+    // Called from the MFC message pump after the Qt button callback has
+    // returned. Reading on the Qt thread here avoids the QtKit lifetime bug
+    // that occurs when property access is nested inside its clicked action.
+    pContext->runOnQtThread([this, pContext]() {
+        if (pContext->isObjectBound(DemoName.property))
+            m_pController->CommitAppliedColorHex(
+                pContext->property(DemoName.property).propertyString("appliedColorHex"));
     });
 }

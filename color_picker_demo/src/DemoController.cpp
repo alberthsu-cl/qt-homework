@@ -41,6 +41,14 @@ void CDemoController::SetPendingColorHex(const std::string& colorHex)
     m_pendingRgb = ParseColor(colorHex, m_pendingRgb.load());
 }
 
+void CDemoController::CommitAppliedColorHex(const std::string& colorHex)
+{
+    const unsigned rgb = ParseColor(colorHex, m_appliedRgb.load());
+    m_pendingRgb = rgb;
+    m_appliedRgb = rgb;
+    m_isEditing = false;
+}
+
 void CDemoController::ApplyColorEdit()
 {
     m_appliedRgb = m_pendingRgb.load();

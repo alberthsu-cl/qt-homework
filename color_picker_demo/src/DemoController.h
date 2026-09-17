@@ -28,6 +28,7 @@ public:
 
     void BeginColorEdit();
     void SetPendingColorHex(const std::string& colorHex);
+    void CommitAppliedColorHex(const std::string& colorHex);
     void ApplyColorEdit();
     void CancelColorEdit();
     void AddCustomColor();
