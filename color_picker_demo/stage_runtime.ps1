@@ -10,8 +10,8 @@
     Process.Modules of a live QmlColorPiker.exe, not from guesswork - and each
     group carries a note on what breaks without it.
 
-        .\stage_runtime.ps1              stage Debug (default)
-        .\stage_runtime.ps1 -Release     stage Release
+        .\stage_runtime.ps1              stage runtime files
+        .\stage_runtime.ps1 -Release     accepted for compatibility
         .\stage_runtime.ps1 -Clean       wipe staged files first (keeps the .exe)
         .\stage_runtime.ps1 -Verify      list the full staged tree at the end
 
@@ -34,8 +34,10 @@ $src = (Resolve-Path $src).Path
 # Qt6Cored.dll, qwindows.dll and qwindowsd.dll. The demo always loads the
 # RELEASE Qt, because QtKitWrapper's "#ifdef DEBUG" branch is dead in this repo
 # (no .vcxproj defines bare DEBUG) and so is ours - we deliberately mirror it.
-# Only the MFC and CRT DLLs actually differ between our Debug and Release build.
-$dbg = -not $Release
+# QtKit's public interface returns std::string by value. Both application
+# configurations therefore use the release CRT/MFC so allocation and
+# destruction happen through one compatible STL ABI. The Debug configuration
+# still emits symbols and disables optimization.
 
 # =============================================================================
 #  MANIFEST
@@ -135,18 +137,7 @@ $wholeDirs = @(
     'qml\QtQuick\Controls\Basic'
 )
 
-# Debug-only: our own build links the debug CRT and the debug MFC. The Qt side
-# stays release either way (see the $dbg comment above).
-if ($dbg) {
-    $groups['debug CRT + MFC'] = @(
-        'MSVCP140D.dll'
-        'VCRUNTIME140D.dll'
-        'VCRUNTIME140_1D.dll'
-        'mfc140ud.dll'       # 'u' = Unicode, 'd' = debug
-    )
-} else {
-    $groups['MFC'] = @('mfc140u.dll')
-}
+$groups['MFC'] = @('mfc140u.dll')
 
 # =============================================================================
 #  COPY
@@ -154,7 +145,7 @@ if ($dbg) {
 Write-Host ""
 Write-Host "  source : $src"
 Write-Host "  target : $dst"
-Write-Host "  config : $(if ($dbg) { 'Debug' } else { 'Release' })"
+Write-Host "  runtime: Release (required by QtKit ABI)"
 Write-Host ""
 
 if ($Clean -and (Test-Path -LiteralPath $dst)) {

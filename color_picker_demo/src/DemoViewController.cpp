@@ -176,9 +176,8 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
         }
         const QmlClick code = b.code;
         pContext->button(b.name).setClickedAction([this, code]() {
-            // Keep QtKit callbacks minimal. In particular, do not read or
-            // write IUIProperty here: high-frequency updates and direct Apply
-            // handling can invalidate QtKit's internal callback container.
+            // Marshal feature handling to the MFC thread. Apply reads the
+            // resulting QML property after this callback has returned.
             ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
         });
     }
@@ -229,9 +228,8 @@ void CDemoViewController::SynchronizeAppliedColor()
     if (!pContext || !m_bQmlReady)
         return;
 
-    // Called from the MFC message pump after the Qt button callback has
-    // returned. Reading on the Qt thread here avoids the QtKit lifetime bug
-    // that occurs when property access is nested inside its clicked action.
+    // The MFC message is handled after the Qt clicked callback returns. Hop
+    // back to the Qt thread for the property read itself.
     pContext->runOnQtThread([this, pContext]() {
         if (pContext->isObjectBound(DemoName.property))
             m_pController->CommitAppliedColorHex(
