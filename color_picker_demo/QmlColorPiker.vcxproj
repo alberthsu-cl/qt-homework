@@ -116,6 +116,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="qml\ColorPickerDialog.qml" />
     <None Include="qml\DemoWindow.qml" />
     <None Include="qml\DemoName.qml" />
     <None Include="qml\DemoProperty.qml" />
