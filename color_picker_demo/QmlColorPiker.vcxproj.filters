@@ -4,9 +4,18 @@
     <Filter Include="QML">
       <UniqueIdentifier>{5650F535-D681-48C6-83B6-54D4233C2B63}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6154E09A-6853-4BF3-8C42-24C80E862086}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{9754C1C7-7191-4D39-963F-D12A496C7A34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="qml\ColorPickerDialog.qml">
+      <Filter>QML</Filter>
+    </None>
+    <None Include="qml\ColorPickerProperty.qml">
       <Filter>QML</Filter>
     </None>
     <None Include="qml\DemoImageButton.qml">
@@ -27,5 +36,15 @@
     <None Include="qml\qmldir">
       <Filter>QML</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\ColorPickerViewController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ColorPickerViewController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

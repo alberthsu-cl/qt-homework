@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -101,6 +101,7 @@
     </ClCompile>
     <ClCompile Include="src\DemoApp.cpp" />
     <ClCompile Include="src\MainFrame.cpp" />
+    <ClCompile Include="src\ColorPickerViewController.cpp" />
     <ClCompile Include="src\DemoController.cpp" />
     <ClCompile Include="src\DemoViewController.cpp" />
     <ClCompile Include="src\QtKitHost.cpp" />
@@ -109,6 +110,7 @@
   <ItemGroup>
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\MainFrame.h" />
+    <ClInclude Include="src\ColorPickerViewController.h" />
     <ClInclude Include="src\QtKitHost.h" />
     <ClInclude Include="src\DemoNames.h" />
     <ClInclude Include="src\DemoController.h" />
@@ -117,6 +119,7 @@
 
   <ItemGroup>
     <None Include="qml\ColorPickerDialog.qml" />
+    <None Include="qml\ColorPickerProperty.qml" />
     <None Include="qml\DemoImageButton.qml" />
     <None Include="qml\DemoWindow.qml" />
     <None Include="qml\DemoName.qml" />

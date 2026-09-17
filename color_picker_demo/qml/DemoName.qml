@@ -6,9 +6,11 @@ import QtQuick
 QtObject
 {
     property string window:         "colorPicker.window"
+    property string pickerWindow:   "colorPicker.pickerWindow"
 
     // the shared state block - see DemoProperty.qml
     property string property:       "colorPicker.property"
+    property string pickerProperty: "colorPicker.pickerProperty"
 
     // C++ writes into these two
     property string caption:        "colorPicker.caption"

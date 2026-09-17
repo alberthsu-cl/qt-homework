@@ -1,18 +1,36 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
+import QtKit
 
-Item {
+Window {
     id: root
-    visible: false
+    visible: true
+    width: 560
+    height: 420
+    minimumWidth: 560
+    maximumWidth: 560
+    minimumHeight: 420
+    maximumHeight: 420
+    flags: Qt.Dialog | Qt.FramelessWindowHint
+    modality: Qt.NonModal
+    color: "transparent"
+    title: "Color Picker"
+
+    property UIWindow binding
+
+    ColorPickerProperty {
+        id: pickerProperty
+        onAppliedColorHexChanged: root.initialColor = appliedColorHex
+        onColorHexChanged: root.synchronizeFromProperty()
+    }
 
     property string initialColor: "#3B82F6"
     property string previewColor: initialColor
     property string colorMode: "HSV"
-    property var customColors: []
-
-    signal accepted(string colorHex)
-    signal rejected()
-    signal addCustomRequested(string colorHex)
+    property bool synchronizingProperty: false
+    property var customColors: pickerProperty.customColors === ""
+                               ? [] : pickerProperty.customColors.split(",")
 
     property real hue: 215
     property real saturation: 0.91
@@ -121,58 +139,104 @@ Item {
         hueBoard.requestPaint()
     }
 
-    function open(colorHex) {
-        initialColor = colorHex
-        setFromHex(colorHex)
-        previewColor = hsvToHex()
-        visible = true
-    }
-
     function accept() {
-        visible = false
-        accepted(previewColor)
+        pickerProperty.colorHex = previewColor
+        applyEvent.binding.clicked()
     }
 
     function reject() {
         previewColor = initialColor
-        visible = false
-        rejected()
+        cancelEvent.binding.clicked()
     }
+
+    onPreviewColorChanged: {
+        if (visible && !synchronizingProperty)
+            pickerProperty.colorHex = previewColor
+    }
+
+    function synchronizeFromProperty() {
+        if (pickerProperty.colorHex.toUpperCase() === previewColor.toUpperCase())
+            return
+        synchronizingProperty = true
+        setFromHex(pickerProperty.colorHex)
+        previewColor = hsvToHex()
+        synchronizingProperty = false
+    }
+
+    onClosing: function(close) {
+        close.accepted = false
+        root.reject()
+    }
+
+    Component.onCompleted: {
+        binding = qmlContext.bindWindow(this, DemoName.pickerWindow)
+        initialColor = pickerProperty.appliedColorHex
+        synchronizeFromProperty()
+    }
+
+    Component.onDestruction: qmlContext.unbind(this, DemoName.pickerWindow)
 
     Rectangle {
         anchors.fill: parent
-        color: "#AA000000"
-
-        MouseArea { anchors.fill: parent }
+        color: "transparent"
 
         Rectangle {
             id: picker
-            anchors.centerIn: parent
-            width: 560
-            height: 420
+            anchors.fill: parent
             radius: 6
             color: "#242B37"
             border.color: "#4D5A6D"
 
-            Label {
+            Rectangle {
+                id: titleBar
                 anchors.left: parent.left
-                anchors.leftMargin: 18
-                anchors.top: parent.top
-                anchors.topMargin: 15
-                text: "Color Picker"
-                color: "#F4F7FB"
-                font.pixelSize: 18
-                font.bold: true
-            }
-
-            Label {
                 anchors.right: parent.right
-                anchors.rightMargin: 18
                 anchors.top: parent.top
-                anchors.topMargin: 19
-                text: "Live preview"
-                color: "#84D9A4"
-                font.pixelSize: 12
+                height: 44
+                radius: 6
+                color: "#2D3543"
+
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: root.startSystemMove()
+                }
+
+                Label {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Color Picker"
+                    color: "#F4F7FB"
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+
+                Label {
+                    anchors.right: closeButton.left
+                    anchors.rightMargin: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Live preview"
+                    color: "#84D9A4"
+                    font.pixelSize: 12
+                }
+
+                Rectangle {
+                    id: closeButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 26
+                    height: 26
+                    radius: 3
+                    color: closeMouse.containsMouse ? "#465164" : "transparent"
+                    Label { anchors.centerIn: parent; text: "X"; color: "#F4F7FB"; font.pixelSize: 12 }
+                    MouseArea {
+                        id: closeMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: root.reject()
+                    }
+                }
             }
 
             Rectangle {
@@ -455,7 +519,13 @@ Item {
                 color: "#343E4D"
                 border.color: "#5B6A80"
                 Label { anchors.centerIn: parent; text: "Add custom"; color: "#F4F7FB"; font.pixelSize: 11 }
-                MouseArea { anchors.fill: parent; onClicked: root.addCustomRequested(root.previewColor) }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        pickerProperty.colorHex = root.previewColor
+                        addCustomEvent.binding.clicked()
+                    }
+                }
             }
 
             Rectangle {
@@ -484,6 +554,30 @@ Item {
                 border.color: "#5B6A80"
                 Label { anchors.centerIn: parent; text: "Cancel"; color: "#F4F7FB"; font.pixelSize: 12 }
                 MouseArea { anchors.fill: parent; onClicked: root.reject() }
+            }
+
+            Button {
+                id: addCustomEvent
+                visible: false
+                property UIButton binding
+                Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.addCustomButton)
+                Component.onDestruction: qmlContext.unbind(this, DemoName.addCustomButton)
+            }
+
+            Button {
+                id: applyEvent
+                visible: false
+                property UIButton binding
+                Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.applyButton)
+                Component.onDestruction: qmlContext.unbind(this, DemoName.applyButton)
+            }
+
+            Button {
+                id: cancelEvent
+                visible: false
+                property UIButton binding
+                Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.cancelButton)
+                Component.onDestruction: qmlContext.unbind(this, DemoName.cancelButton)
             }
         }
     }

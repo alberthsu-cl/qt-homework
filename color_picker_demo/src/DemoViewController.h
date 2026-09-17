@@ -37,15 +37,13 @@ public:
     // ---- callable from the MFC thread; each hops to the Qt thread itself ----
     void SetViewportSize(int cx, int cy);
     void PushImage(const std::string& strUrlUtf8, const std::string& strCaptionUtf8);
-    void SynchronizeAppliedColor();
-    void AddCurrentCustomColor();
 
 private:
     // ---- these two run ON THE QT THREAD ------------------------------------
     void OnQtReady();
     void OnQmlDidLoad();
 
-    void WireButtons(IQmlContext* pContext);
+    void WireOpenButton(IQmlContext* pContext);
 
 private:
     CDemoController* m_pController{ nullptr };   // not owned

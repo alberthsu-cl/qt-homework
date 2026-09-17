@@ -125,7 +125,7 @@ void CDemoViewController::OnQmlDidLoad()
 
     // ---- 3. wire QML -> C++ ------------------------------------------------
     QtKitHost::Log("wiring picker controls");
-    WireButtons(pContext);
+    WireOpenButton(pContext);
 
     // ---- 4. seed the shared state block ------------------------------------
     // QML starts with the defaults declared in DemoProperty.qml; this makes the
@@ -147,7 +147,7 @@ void CDemoViewController::OnQmlDidLoad()
     ::PostMessage(m_hNotify, WM_APP_QML_CLICK, 0, 0);   // 0 = "ready"
 }
 
-void CDemoViewController::WireButtons(IQmlContext* pContext)
+void CDemoViewController::WireOpenButton(IQmlContext* pContext)
 {
     // ALWAYS check isObjectBound() first. The accessors do not return null for
     // an unknown name: QtKit logs "The id (x) does not exist" and hands back a
@@ -159,28 +159,15 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
     // button reports that it was pressed; the controller owns what that means.
     // Before this layer existed, QML clamped the zoom itself and C++ only
     // counted clicks.
-    struct { const char* name; QmlClick code; } kButtons[] = {
-        { DemoName.openPickerButton, kClickOpenPicker },
-        { DemoName.resetButton,      kClickReset },
-        { DemoName.cancelButton,     kClickCancel },
-        { DemoName.addCustomButton,  kClickAddCustom },
-        { DemoName.applyButton,      kClickApply },
-    };
-
-    for (const auto& b : kButtons)
+    if (!pContext->isObjectBound(DemoName.openPickerButton))
     {
-        if (!pContext->isObjectBound(b.name))
-        {
-            QtKitHost::Log("button %s NOT bound - skipped", b.name);
-            continue;
-        }
-        const QmlClick code = b.code;
-        pContext->button(b.name).setClickedAction([this, code]() {
-            // Marshal feature handling to the MFC thread. Apply reads the
-            // resulting QML property after this callback has returned.
-            ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
-        });
+        QtKitHost::Log("button %s NOT bound - skipped", DemoName.openPickerButton);
+        return;
     }
+
+    pContext->button(DemoName.openPickerButton).setClickedAction([this]() {
+        ::PostMessage(m_hNotify, WM_APP_QML_CLICK, kClickOpenPicker, 0);
+    });
 }
 
 // =============================================================================
@@ -219,36 +206,5 @@ void CDemoViewController::PushImage(const std::string& strUrlUtf8,
         if (pContext->isObjectBound(DemoName.caption))
             pContext->label(DemoName.caption).text(strCaptionUtf8.c_str());
         QtKitHost::Log("pushed image: %s", strUrlUtf8.c_str());
-    });
-}
-
-void CDemoViewController::SynchronizeAppliedColor()
-{
-    IQmlContext* pContext = QtKitHost::Inst().Context();
-    if (!pContext || !m_bQmlReady)
-        return;
-
-    // The MFC message is handled after the Qt clicked callback returns. Hop
-    // back to the Qt thread for the property read itself.
-    pContext->runOnQtThread([this, pContext]() {
-        if (pContext->isObjectBound(DemoName.property))
-            m_pController->CommitAppliedColorHex(
-                pContext->property(DemoName.property).propertyString("appliedColorHex"));
-    });
-}
-
-void CDemoViewController::AddCurrentCustomColor()
-{
-    IQmlContext* pContext = QtKitHost::Inst().Context();
-    if (!pContext || !m_bQmlReady)
-        return;
-
-    pContext->runOnQtThread([this, pContext]() {
-        if (!pContext->isObjectBound(DemoName.property))
-            return;
-
-        m_pController->SetPendingColorHex(
-            pContext->property(DemoName.property).propertyString("colorHex"));
-        m_pController->AddCustomColor();
     });
 }

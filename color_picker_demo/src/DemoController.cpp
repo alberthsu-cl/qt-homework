@@ -104,25 +104,29 @@ void CDemoController::PublishState()
     if (!pContext)
         return;
 
-    // Same guard as every other accessor in this demo: an unbound name does
-    // not come back null, it logs "The id does not exist" and then faults.
-    if (!pContext->isObjectBound(DemoName.property))
-    {
-        QtKitHost::Log("PublishState: %s not bound - skipped", DemoName.property);
-        return;
-    }
-
-    QtKitHost::Log("PublishState: writing picker state");
-    auto& prop = pContext->property(DemoName.property);
-    prop.property("colorHex", FormatColor(m_pendingRgb.load()).c_str());
-    prop.property("appliedColorHex", AppliedColorHex().c_str());
-    prop.property("pickerVisible", m_isEditing.load());
     std::ostringstream colors;
     for (size_t i = 0; i < m_customColors.size(); ++i) {
         if (i) colors << ",";
         colors << FormatColor(m_customColors[i]);
     }
-    QtKitHost::Log("PublishState: writing customColors");
-    prop.property("customColors", colors.str().c_str());
+
+    const std::string appliedColor = AppliedColorHex();
+    const std::string pendingColor = FormatColor(m_pendingRgb.load());
+    const std::string customColors = colors.str();
+    const auto publish = [&](const char* name) {
+        if (!pContext->isObjectBound(name))
+            return;
+        auto& prop = pContext->property(name);
+        // colorHex is last because picker QML treats it as the completed state
+        // update and refreshes its HSV/RGB controls from that value.
+        prop.property("appliedColorHex", appliedColor.c_str());
+        prop.property("pickerVisible", m_isEditing.load());
+        prop.property("customColors", customColors.c_str());
+        prop.property("colorHex", pendingColor.c_str());
+    };
+
+    QtKitHost::Log("PublishState: writing main and picker state");
+    publish(DemoName.property);
+    publish(DemoName.pickerProperty);
     QtKitHost::Log("PublishState: complete");
 }

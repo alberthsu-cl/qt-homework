@@ -20,6 +20,7 @@ enum QmlClick { kClickOpenPicker = 1, kClickAddCustom, kClickReset, kClickApply,
 
 class CDemoController;
 class CDemoViewController;
+class CColorPickerViewController;
 
 // The MFC half of the demo, and nothing else: a menu, a status strip, a file
 // dialog and a layout. It owns the controller, the controller owns the state,
@@ -53,4 +54,5 @@ private:
 
     std::unique_ptr<CDemoController>     m_pController;
     std::unique_ptr<CDemoViewController> m_pViewController;
+    std::unique_ptr<CColorPickerViewController> m_pColorPickerViewController;
 };

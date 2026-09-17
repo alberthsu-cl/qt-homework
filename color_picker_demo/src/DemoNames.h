@@ -17,11 +17,13 @@ struct DemoNames
 {
     // bindWindow - the QML Window whose HWND we reparent into the MFC frame
     const char* window        = "colorPicker.window";
+    const char* pickerWindow  = "colorPicker.pickerWindow";
 
     // bindProperty - the shared state block (qml/DemoProperty.qml).
     // C++ owns zoomFactor and rotationDeg and writes them through
     // context->property(DemoName.property).property("zoomFactor", 1.25f).
     const char* property      = "colorPicker.property";
+    const char* pickerProperty = "colorPicker.pickerProperty";
 
     // C++ -> QML
     const char* caption       = "colorPicker.caption";

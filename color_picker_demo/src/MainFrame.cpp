@@ -2,6 +2,7 @@
 #include "MainFrame.h"
 #include "DemoController.h"
 #include "DemoViewController.h"
+#include "ColorPickerViewController.h"
 #include "QtKitHost.h"
 
 #include <afxdlgs.h>   // CFileDialog
@@ -62,6 +63,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
     // QML tree is up, which can be before Present() has returned.
     m_pController.reset(new CDemoController());
     m_pViewController.reset(new CDemoViewController(m_pController.get(), GetSafeHwnd()));
+    m_pColorPickerViewController.reset(
+        new CColorPickerViewController(m_pController.get(), GetSafeHwnd()));
 
     if (!m_pViewController->Present())
     {
@@ -111,10 +114,8 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM /*lParam*/)
 
     ++m_nClickCount;
 
-    if (static_cast<QmlClick>(wParam) == kClickApply && m_pViewController)
-        m_pViewController->SynchronizeAppliedColor();
-    else if (static_cast<QmlClick>(wParam) == kClickAddCustom && m_pViewController)
-        m_pViewController->AddCurrentCustomColor();
+    if (static_cast<QmlClick>(wParam) == kClickOpenPicker && m_pColorPickerViewController)
+        m_pColorPickerViewController->Present();
 
     // Reading the numbers back out of the controller is the whole difference
     // this refactor makes: C++ can answer "what is the zoom?" without asking
@@ -195,6 +196,11 @@ void CMainFrame::OnDestroy()
 {
     // Tear down in layer order: view controller detaches the Qt child and
     // unloads, then the Qt runloop stops, then the controller goes.
+    if (m_pColorPickerViewController)
+    {
+        m_pColorPickerViewController->Dismiss();
+        m_pColorPickerViewController.reset();
+    }
     if (m_pViewController)
     {
         m_pViewController->Dismiss();

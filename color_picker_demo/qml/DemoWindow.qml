@@ -10,17 +10,14 @@ Window {
     color: "#12161D"
 
     property UIWindow binding
-    property color previewTint: colorPicker.visible
-                                ? colorPicker.previewColor
+    property color previewTint: DemoProperty.pickerVisible
+                                ? DemoProperty.colorHex
                                 : DemoProperty.appliedColorHex
 
     Component.onCompleted: binding = qmlContext.bindWindow(this, DemoName.window)
     Component.onDestruction: qmlContext.unbind(this, DemoName.window)
 
     function openPicker() {
-        DemoProperty.colorHex = DemoProperty.appliedColorHex
-        DemoProperty.pickerVisible = true
-        colorPicker.open(DemoProperty.appliedColorHex)
         openEvent.binding.clicked()
     }
 
@@ -119,36 +116,6 @@ Window {
             }
         }
 
-        ColorPickerDialog {
-            id: colorPicker
-            anchors.fill: parent
-            customColors: DemoProperty.customColors === ""
-                          ? [] : DemoProperty.customColors.split(",")
-
-            onPreviewColorChanged: {
-                if (visible)
-                    DemoProperty.colorHex = previewColor
-            }
-
-            onAccepted: function(colorHex) {
-                DemoProperty.colorHex = colorHex
-                DemoProperty.appliedColorHex = colorHex
-                DemoProperty.pickerVisible = false
-                applyEvent.binding.clicked()
-            }
-
-            onRejected: {
-                DemoProperty.colorHex = DemoProperty.appliedColorHex
-                DemoProperty.pickerVisible = false
-                cancelEvent.binding.clicked()
-            }
-
-            onAddCustomRequested: function(colorHex) {
-                DemoProperty.colorHex = colorHex
-                addCustomEvent.binding.clicked()
-            }
-        }
-
         Button {
             id: openEvent
             visible: false
@@ -157,28 +124,5 @@ Window {
             Component.onDestruction: qmlContext.unbind(this, DemoName.openPickerButton)
         }
 
-        Button {
-            id: addCustomEvent
-            visible: false
-            property UIButton binding
-            Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.addCustomButton)
-            Component.onDestruction: qmlContext.unbind(this, DemoName.addCustomButton)
-        }
-
-        Button {
-            id: applyEvent
-            visible: false
-            property UIButton binding
-            Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.applyButton)
-            Component.onDestruction: qmlContext.unbind(this, DemoName.applyButton)
-        }
-
-        Button {
-            id: cancelEvent
-            visible: false
-            property UIButton binding
-            Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.cancelButton)
-            Component.onDestruction: qmlContext.unbind(this, DemoName.cancelButton)
-        }
     }
 }
