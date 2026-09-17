@@ -222,15 +222,23 @@ Item {
                 onPaint: {
                     var context = getContext("2d")
                     var hueGradient = context.createLinearGradient(0, 0, width, 0)
-                    hueGradient.addColorStop(0, "#FFFFFF")
-                    hueGradient.addColorStop(1, Qt.hsva(root.hue / 360.0, 1, 1, 1))
+                    hueGradient.addColorStop(0.0, "#FF0000")
+                    hueGradient.addColorStop(1.0 / 6.0, "#FFFF00")
+                    hueGradient.addColorStop(2.0 / 6.0, "#00FF00")
+                    hueGradient.addColorStop(3.0 / 6.0, "#00FFFF")
+                    hueGradient.addColorStop(4.0 / 6.0, "#0000FF")
+                    hueGradient.addColorStop(5.0 / 6.0, "#FF00FF")
+                    hueGradient.addColorStop(1.0, "#FF0000")
                     context.fillStyle = hueGradient
                     context.fillRect(0, 0, width, height)
 
-                    var valueGradient = context.createLinearGradient(0, 0, 0, height)
-                    valueGradient.addColorStop(0, "rgba(0,0,0,0)")
-                    valueGradient.addColorStop(1, "#000000")
-                    context.fillStyle = valueGradient
+                    var saturationGradient = context.createLinearGradient(0, 0, 0, height)
+                    saturationGradient.addColorStop(0, "rgba(255,255,255,0)")
+                    saturationGradient.addColorStop(1, "#FFFFFF")
+                    context.fillStyle = saturationGradient
+                    context.fillRect(0, 0, width, height)
+
+                    context.fillStyle = "rgba(0,0,0," + (1 - root.value) + ")"
                     context.fillRect(0, 0, width, height)
                 }
 
@@ -238,8 +246,8 @@ Item {
                     anchors.fill: parent
 
                     function select(mouse) {
-                        root.saturation = root.clamp(mouse.x / parent.width, 0, 1)
-                        root.value = root.clamp(1 - mouse.y / parent.height, 0, 1)
+                        root.hue = root.clamp(mouse.x / parent.width * 360, 0, 360)
+                        root.saturation = root.clamp(1 - mouse.y / parent.height, 0, 1)
                         root.publishPreview()
                     }
 
@@ -251,8 +259,8 @@ Item {
                 }
 
                 Rectangle {
-                    x: root.saturation * hueBoard.width - 7
-                    y: (1 - root.value) * hueBoard.height - 7
+                    x: root.hue / 360 * hueBoard.width - 7
+                    y: (1 - root.saturation) * hueBoard.height - 7
                     width: 14
                     height: 14
                     radius: 7
@@ -263,20 +271,24 @@ Item {
             }
 
             Rectangle {
-                id: hueTrack
+                id: valueTrack
                 anchors.left: hueBoard.right
                 anchors.leftMargin: 18
                 anchors.top: hueBoard.top
-                width: 10
+                width: 14
                 height: hueBoard.height
                 radius: 5
-                color: "#151A22"
                 border.color: "#56657A"
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: Qt.hsva(root.hue / 360.0, root.saturation, 1, 1) }
+                    GradientStop { position: 1.0; color: "#000000" }
+                }
 
                 Rectangle {
-                    y: (1 - root.hue / 360) * (hueTrack.height - height)
+                    y: (1 - root.value) * (valueTrack.height - height)
                     x: -4
-                    width: 18
+                    width: 22
                     height: 18
                     radius: 9
                     color: "#F4F7FB"
@@ -286,7 +298,7 @@ Item {
                     anchors.fill: parent
 
                     function select(mouse) {
-                        root.hue = root.clamp((1 - mouse.y / parent.height) * 360, 0, 360)
+                        root.value = root.clamp(1 - mouse.y / parent.height, 0, 1)
                         root.publishPreview()
                     }
 
@@ -300,7 +312,7 @@ Item {
 
             ComboBox {
                 id: formatSelector
-                anchors.left: hueTrack.right
+                anchors.left: valueTrack.right
                 anchors.leftMargin: 28
                 anchors.right: parent.right
                 anchors.rightMargin: 18
@@ -312,7 +324,7 @@ Item {
             }
 
             Column {
-                anchors.left: hueTrack.right
+                anchors.left: valueTrack.right
                 anchors.leftMargin: 28
                 anchors.right: parent.right
                 anchors.rightMargin: 18
