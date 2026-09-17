@@ -7,6 +7,11 @@ feature. It deliberately does not modify `src`, `skinQt`, or a PDR solution.
 
 - HSV hue and saturation canvas, with a value slider.
 - Live color preview, hexadecimal value, HSV spin boxes, and RGB readout.
+- Native `File > Open Preview Image` input rendered by the full-screen QML
+  image canvas.
+- A Color button opens the picker over the preview. Pending HSV changes tint
+  immediately; Apply returns the new `#RRGGBB`, while Cancel restores the
+  previous applied tint.
 - Basic preset swatches.
 - Add, load, and save up to twelve custom colors in `custom_colors.txt` next
   to the executable's working directory.
@@ -20,19 +25,18 @@ the selected RGB value and custom-color persistence. `CDemoViewController` is
 the one QtKit adapter: it loads QML, binds the HWND, subscribes to user color
 changes, and publishes controller state.
 
-Do not use `setPropertyChangedAction` for high-frequency HSV edits in this
-QtKit runtime. It mutates QtKit's listener list while dispatching a property
-change and can crash. QML writes `colorHex` to `UIProperty` first, then signals
-the dedicated `colorPicker.colorChanged` button event; the VC reads the value
-there and updates the controller safely.
+Do not use QtKit callbacks for high-frequency HSV edits in this runtime.
+Both property and button callbacks can mutate QtKit listener state while QML
+is dispatching rapid updates and crash. QML owns the immediate pending tint;
+the VC reads `colorHex` only at Apply or Add-custom intent boundaries.
 
 ## Run
 
 ```bat
 cd qt-homework\color_picker_demo
 powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1 -Verify
-msbuild MfcQmlDemo.vcxproj /p:Configuration=Debug /p:Platform=x64
-bin_x64\ColorPickerDemo.exe
+msbuild QmlColorPiker.vcxproj /p:Configuration=Debug /p:Platform=x64
+bin_x64\QmlColorPiker.exe
 ```
 
 The project was built with `Debug|x64`, and the running process completed the
@@ -52,6 +56,6 @@ but replace the homework host:
 | `qml/DemoProperty.qml` | `<Feature>Property.qml` |
 | `qml/DemoName.qml` and `src/DemoNames.h` | matching PDR name table |
 
-An MFC button should only create/present the entry controller and consume the
-selected `#RRGGBB` result. Applying the color to media is intentionally outside
-this homework.
+An MFC or QML entry button should only present the picker and consume its
+applied `#RRGGBB` result. Applying a real media effect remains outside this
+homework.

@@ -16,7 +16,7 @@
 #define WM_APP_QML_CLICK  (WM_APP + 1)
 
 // wParam values for WM_APP_QML_CLICK - which QML button was pressed.
-enum QmlClick { kClickZoomIn = 1, kClickZoomOut, kClickRotate, kClickReset };
+enum QmlClick { kClickOpenPicker = 1, kClickAddCustom, kClickReset, kClickApply, kClickCancel };
 
 class CDemoController;
 class CDemoViewController;

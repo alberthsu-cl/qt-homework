@@ -28,7 +28,7 @@ public:
         CMainFrame* pFrame = new CMainFrame;
         m_pMainWnd = pFrame;
 
-        pFrame->Create(nullptr, _T("MFC + QML demo - File > Open Image..."),
+        pFrame->Create(nullptr, _T("QmlColorPiker - File > Open Preview Image..."),
                        WS_OVERLAPPEDWINDOW, CRect(80, 80, 1080, 760));
         pFrame->ShowWindow(SW_SHOW);
         pFrame->UpdateWindow();

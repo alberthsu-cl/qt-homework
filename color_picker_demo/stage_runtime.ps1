@@ -1,5 +1,5 @@
 <#
-    stage_runtime.ps1 - build a self-contained runtime folder for MfcQmlDemo.
+    stage_runtime.ps1 - build a self-contained runtime folder for QmlColorPiker.
 
     Copies the MINIMUM set of files the demo needs out of the product output
     (bin_x64\PowerDirector) into arch_review\mfc_qml_demo\bin_x64, so you can
@@ -7,7 +7,7 @@
 
     The manifest below is the point of this script. Every entry is here because
     the running process actually loaded it - the list was taken from
-    Process.Modules of a live MfcQmlDemo.exe, not from guesswork - and each
+    Process.Modules of a live QmlColorPiker.exe, not from guesswork - and each
     group carries a note on what breaks without it.
 
         .\stage_runtime.ps1              stage Debug (default)
@@ -160,7 +160,7 @@ Write-Host ""
 if ($Clean -and (Test-Path -LiteralPath $dst)) {
     # Keep our own build output; wipe everything staged.
     Get-ChildItem -LiteralPath $dst -Force |
-        Where-Object { $_.Name -notlike 'MfcQmlDemo.*' } |
+        Where-Object { $_.Name -notlike 'QmlColorPiker.*' } |
         Remove-Item -Recurse -Force
     Write-Host "  cleaned staged files (build output kept)"
     Write-Host ""
@@ -227,5 +227,5 @@ if ($Verify) {
 }
 
 Write-Host ""
-Write-Host "  Now build the project - it outputs MfcQmlDemo.exe into this same folder."
+Write-Host "  Now build the project - it outputs QmlColorPiker.exe into this same folder."
 Write-Host ""

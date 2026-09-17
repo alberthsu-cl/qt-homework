@@ -14,10 +14,10 @@ QtObject
     property string caption:        "colorPicker.caption"
     property string photo:          "colorPicker.photo"
 
-    // these four report back to C++
-    property string zoomInButton:   "colorPicker.addCustomButton"
-    property string zoomOutButton:  "colorPicker.resetButton"
-    property string rotateButton:   "colorPicker.applyButton"
-    property string resetButton:    "colorPicker.cancelButton"
-    property string colorChangedButton: "colorPicker.colorChanged"
+    // QML events consumed by the controller
+    property string openPickerButton: "colorPicker.openButton"
+    property string addCustomButton:  "colorPicker.addCustomButton"
+    property string resetButton:      "colorPicker.resetButton"
+    property string applyButton:      "colorPicker.applyButton"
+    property string cancelButton:     "colorPicker.cancelButton"
 }

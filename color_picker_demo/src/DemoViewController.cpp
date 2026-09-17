@@ -70,12 +70,13 @@ void CDemoViewController::OnQmlDidLoad()
     if (!pContext)
         return;
 
-    QtKitHost::Log("bound? window=%d property=%d caption=%d photo=%d add=%d reset=%d",
+    QtKitHost::Log("bound? window=%d property=%d caption=%d photo=%d open=%d add=%d",
                    (int)pContext->isObjectBound(DemoName.window),
                    (int)pContext->isObjectBound(DemoName.property),
                    (int)pContext->isObjectBound(DemoName.caption),
                    (int)pContext->isObjectBound(DemoName.photo),
-                   (int)pContext->isObjectBound(DemoName.zoomInButton),
+                   (int)pContext->isObjectBound(DemoName.openPickerButton),
+                   (int)pContext->isObjectBound(DemoName.addCustomButton),
                    (int)pContext->isObjectBound(DemoName.resetButton));
 
     if (!pContext->isObjectBound(DemoName.window))
@@ -134,18 +135,6 @@ void CDemoViewController::OnQmlDidLoad()
     m_pController->PublishState();
     QtKitHost::Log("picker state published");
 
-    // Do not subscribe with setPropertyChangedAction here. QtKit's property
-    // callback mutates its listener list while dispatching a QML change and
-    // crashes on HSV edits. QML reports that intent through a normal button
-    // event after it has updated the shared property.
-    if (pContext->isObjectBound(DemoName.colorChangedButton) &&
-        pContext->isObjectBound(DemoName.property))
-    {
-        pContext->button(DemoName.colorChangedButton).setClickedAction([this, pContext]() {
-            m_pController->SetColorHex(pContext->property(DemoName.property).propertyString("colorHex"));
-        });
-    }
-
     m_bQmlReady = true;
     QtKitHost::Log("bindings wired - demo ready");
 
@@ -172,10 +161,9 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
     // counted clicks.
     using Action = void (CDemoController::*)();
     struct { const char* name; QmlClick code; Action fn; } kButtons[] = {
-        { DemoName.zoomInButton,  kClickZoomIn,  &CDemoController::AddCustomColor    },
-        { DemoName.zoomOutButton, kClickZoomOut, &CDemoController::ResetToInitialColor },
-        { DemoName.rotateButton,  kClickRotate,  &CDemoController::PublishState },
-        { DemoName.resetButton,   kClickReset,   &CDemoController::ResetToInitialColor },
+        { DemoName.openPickerButton, kClickOpenPicker, &CDemoController::BeginColorEdit },
+        { DemoName.resetButton,      kClickReset,      &CDemoController::ResetPendingColor },
+        { DemoName.cancelButton,     kClickCancel,     &CDemoController::CancelColorEdit },
     };
 
     for (const auto& b : kButtons)
@@ -195,6 +183,25 @@ void CDemoViewController::WireButtons(IQmlContext* pContext)
             ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
         });
     }
+
+    // QtKit is unstable when QML calls a C++ button callback for every HSV
+    // mouse move. The preview remains entirely in QML while editing. These
+    // two low-frequency actions take one property snapshot at user intent
+    // boundaries, so the controller receives only saved or applied values.
+    const auto wireColorSnapshot = [this, pContext](const char* name, QmlClick code, bool apply) {
+        if (!pContext->isObjectBound(name) || !pContext->isObjectBound(DemoName.property))
+            return;
+        pContext->button(name).setClickedAction([this, pContext, code, apply]() {
+            m_pController->SetPendingColorHex(pContext->property(DemoName.property).propertyString("colorHex"));
+            if (apply)
+                m_pController->ApplyColorEdit();
+            else
+                m_pController->AddCustomColor();
+            ::PostMessage(m_hNotify, WM_APP_QML_CLICK, static_cast<WPARAM>(code), 0);
+        });
+    };
+    wireColorSnapshot(DemoName.addCustomButton, kClickAddCustom, false);
+    wireColorSnapshot(DemoName.applyButton, kClickApply, true);
 }
 
 // =============================================================================

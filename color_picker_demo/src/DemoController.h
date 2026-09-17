@@ -26,10 +26,13 @@ public:
     CDemoController();
     ~CDemoController();
 
-    void SetColorHex(const std::string& colorHex);
+    void BeginColorEdit();
+    void SetPendingColorHex(const std::string& colorHex);
+    void ApplyColorEdit();
+    void CancelColorEdit();
     void AddCustomColor();
-    void ResetToInitialColor();
-    std::string ColorHex() const;
+    void ResetPendingColor();
+    std::string AppliedColorHex() const;
 
     void PublishState();
 
@@ -39,7 +42,9 @@ private:
     void LoadCustomColors();
     void SaveCustomColors() const;
 
-    std::atomic<unsigned> m_rgb{ 0x3B82F6 };
+    std::atomic<unsigned> m_appliedRgb{ 0x3B82F6 };
+    std::atomic<unsigned> m_pendingRgb{ 0x3B82F6 };
     const unsigned m_initialRgb{ 0x3B82F6 };
+    std::atomic<bool> m_isEditing{ false };
     std::vector<unsigned> m_customColors;
 };

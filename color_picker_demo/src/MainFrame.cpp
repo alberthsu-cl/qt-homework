@@ -81,10 +81,11 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM /*lParam*/)
     LPCTSTR pszWhat = _T("");
     switch (static_cast<QmlClick>(wParam))
     {
-    case kClickZoomIn:  pszWhat = _T("Add custom color"); break;
-    case kClickZoomOut: pszWhat = _T("Reset color"); break;
-    case kClickRotate:  pszWhat = _T("OK"); break;
-    case kClickReset:   pszWhat = _T("Cancel"); break;
+    case kClickOpenPicker: pszWhat = _T("Open color picker"); break;
+    case kClickAddCustom:  pszWhat = _T("Add custom color"); break;
+    case kClickReset:      pszWhat = _T("Reset pending color"); break;
+    case kClickApply:      pszWhat = _T("Apply color"); break;
+    case kClickCancel:     pszWhat = _T("Cancel color"); break;
     default:
         // "ready" - first chance to lay out the adopted Qt child on the thread
         // that owns the frame.
@@ -92,7 +93,7 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM /*lParam*/)
         m_wndStatus.SetWindowText(
             _T("  QML is live. Native MFC owns this strip and the menu above."));
 
-        // MfcQmlDemo.exe "C:\path\to\picture.png" opens straight into an
+        // QmlColorPiker.exe "C:\path\to\picture.png" opens straight into an
         // image, which saves a trip through the file dialog when you are
         // testing the C++ -> QML direction.
         if (__argc > 1 && __targv && __targv[1])
@@ -114,7 +115,7 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM /*lParam*/)
     // this refactor makes: C++ can answer "what is the zoom?" without asking
     // QML, because C++ is the one that decided it.
     CString str;
-    CString color(CA2W(m_pController->ColorHex().c_str(), CP_UTF8));
+    CString color(CA2W(m_pController->AppliedColorHex().c_str(), CP_UTF8));
     str.Format(_T("  QML \"%s\" -> C++ controller color: %s  (%d actions)"),
                pszWhat, color.GetString(), m_nClickCount);
     m_wndStatus.SetWindowText(str);
@@ -150,7 +151,7 @@ void CMainFrame::PushImageToQml(const CString& strPath)
     m_pViewController->PushImage(ToUtf8(strUrl), "C++ pushed:  " + ToUtf8(strName));
 
     CString strTitle;
-    strTitle.Format(_T("MFC + QML demo - %s"), static_cast<LPCTSTR>(strName));
+    strTitle.Format(_T("QmlColorPiker - %s"), static_cast<LPCTSTR>(strName));
     SetWindowText(strTitle);
 }
 

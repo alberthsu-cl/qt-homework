@@ -21,6 +21,8 @@ UIProperty
     property UIProperty binding
 
     property string colorHex: "#3B82F6"
+    property string appliedColorHex: "#3B82F6"
+    property bool pickerVisible: false
     property string customColors: ""
 
     Component.onCompleted:   binding = qmlContext.bindProperty(this, DemoName.property)

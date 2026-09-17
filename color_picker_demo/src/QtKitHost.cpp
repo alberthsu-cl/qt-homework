@@ -18,7 +18,7 @@ void QtKitHost::Log(const char* fmt, ...)
 {
     char szDir[MAX_PATH] = { 0 };
     ::GetTempPathA(MAX_PATH, szDir);
-    std::string strPath = std::string(szDir) + "MfcQmlDemo.log";
+    std::string strPath = std::string(szDir) + "QmlColorPiker.log";
 
     FILE* fp = nullptr;
     if (fopen_s(&fp, strPath.c_str(), "a") != 0 || !fp)
@@ -111,7 +111,7 @@ bool QtKitHost::Start(std::function<void()> onReady)
     // access violation at startup, not a degraded feature. The set below is the
     // minimum that actually starts; compare QtKitWrapper.cpp, which additionally
     // configures DPI, language and the .rcc.
-    m_pQtKit->setAppName("MfcQmlDemo");
+    m_pQtKit->setAppName("QmlColorPiker");
     Log("setAppName ok");
 
     // The create-factory is REQUIRED even when every delegate is null.
@@ -121,8 +121,8 @@ bool QtKitHost::Start(std::function<void()> onReady)
     // QtKit writes QSettings through these two paths. Unset = crash.
     char szTemp[MAX_PATH] = { 0 };
     ::GetTempPathA(MAX_PATH, szTemp);
-    const std::string strUserIni = std::string(szTemp) + "MfcQmlDemo_UserConfig.ini";
-    const std::string strDsaIni  = std::string(szTemp) + "MfcQmlDemo_DontShowAgain.ini";
+    const std::string strUserIni = std::string(szTemp) + "QmlColorPiker_UserConfig.ini";
+    const std::string strDsaIni  = std::string(szTemp) + "QmlColorPiker_DontShowAgain.ini";
     m_pQtKit->setUserConfigIniPath(strUserIni.c_str());
     m_pQtKit->setDontShowAgainIniPath(strDsaIni.c_str());
     Log("ini paths ok: %s", strUserIni.c_str());

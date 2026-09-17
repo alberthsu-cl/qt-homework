@@ -28,11 +28,11 @@ struct DemoNames
     const char* photo         = "colorPicker.photo";
 
     // QML -> C++   (bindButton, QML calls binding.clicked())
-    const char* zoomInButton  = "colorPicker.addCustomButton";
-    const char* zoomOutButton = "colorPicker.resetButton";
-    const char* rotateButton  = "colorPicker.applyButton";
-    const char* resetButton   = "colorPicker.cancelButton";
-    const char* colorChangedButton = "colorPicker.colorChanged";
+    const char* openPickerButton = "colorPicker.openButton";
+    const char* addCustomButton  = "colorPicker.addCustomButton";
+    const char* resetButton      = "colorPicker.resetButton";
+    const char* applyButton      = "colorPicker.applyButton";
+    const char* cancelButton     = "colorPicker.cancelButton";
 };
 
 static const DemoNames DemoName;

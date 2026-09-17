@@ -29,19 +29,40 @@ std::string CDemoController::FormatColor(unsigned rgb)
     return buffer;
 }
 
-void CDemoController::SetColorHex(const std::string& colorHex)
+void CDemoController::BeginColorEdit()
 {
-    m_rgb = ParseColor(colorHex, m_rgb.load());
+    m_pendingRgb = m_appliedRgb.load();
+    m_isEditing = true;
+    PublishState();
 }
 
-std::string CDemoController::ColorHex() const
+void CDemoController::SetPendingColorHex(const std::string& colorHex)
 {
-    return FormatColor(m_rgb.load());
+    m_pendingRgb = ParseColor(colorHex, m_pendingRgb.load());
+}
+
+void CDemoController::ApplyColorEdit()
+{
+    m_appliedRgb = m_pendingRgb.load();
+    m_isEditing = false;
+    PublishState();
+}
+
+void CDemoController::CancelColorEdit()
+{
+    m_pendingRgb = m_appliedRgb.load();
+    m_isEditing = false;
+    PublishState();
+}
+
+std::string CDemoController::AppliedColorHex() const
+{
+    return FormatColor(m_appliedRgb.load());
 }
 
 void CDemoController::AddCustomColor()
 {
-    const unsigned rgb = m_rgb.load();
+    const unsigned rgb = m_pendingRgb.load();
     m_customColors.erase(std::remove(m_customColors.begin(), m_customColors.end(), rgb), m_customColors.end());
     m_customColors.insert(m_customColors.begin(), rgb);
     if (m_customColors.size() > kMaxCustomColors) m_customColors.pop_back();
@@ -49,9 +70,9 @@ void CDemoController::AddCustomColor()
     PublishState();
 }
 
-void CDemoController::ResetToInitialColor()
+void CDemoController::ResetPendingColor()
 {
-    m_rgb = m_initialRgb;
+    m_pendingRgb = m_initialRgb;
     PublishState();
 }
 
@@ -83,9 +104,11 @@ void CDemoController::PublishState()
         return;
     }
 
-    QtKitHost::Log("PublishState: writing colorHex");
+    QtKitHost::Log("PublishState: writing picker state");
     auto& prop = pContext->property(DemoName.property);
-    prop.property("colorHex", ColorHex().c_str());
+    prop.property("colorHex", FormatColor(m_pendingRgb.load()).c_str());
+    prop.property("appliedColorHex", AppliedColorHex().c_str());
+    prop.property("pickerVisible", m_isEditing.load());
     std::ostringstream colors;
     for (size_t i = 0; i < m_customColors.size(); ++i) {
         if (i) colors << ",";

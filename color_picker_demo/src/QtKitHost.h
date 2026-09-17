@@ -31,7 +31,7 @@ class QtKitHost : public ICreateFactory
 public:
     static QtKitHost& Inst();
 
-    // Appends one line to %TEMP%\MfcQmlDemo.log. The demo has no console and
+    // Appends one line to %TEMP%\QmlColorPiker.log. The demo has no console and
     // OutputDebugString needs a debugger attached, so this is how you find out
     // how far startup got.
     static void Log(const char* fmt, ...);
