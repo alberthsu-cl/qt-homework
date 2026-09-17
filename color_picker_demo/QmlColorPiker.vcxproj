@@ -117,9 +117,11 @@
 
   <ItemGroup>
     <None Include="qml\ColorPickerDialog.qml" />
+    <None Include="qml\DemoImageButton.qml" />
     <None Include="qml\DemoWindow.qml" />
     <None Include="qml\DemoName.qml" />
     <None Include="qml\DemoProperty.qml" />
+    <None Include="qml\DemoTintEffect.qml" />
     <None Include="qml\qmldir" />
     <None Include="README.md" />
   </ItemGroup>

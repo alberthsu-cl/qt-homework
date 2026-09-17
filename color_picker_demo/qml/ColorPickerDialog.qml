@@ -7,9 +7,12 @@ Item {
 
     property string initialColor: "#3B82F6"
     property string previewColor: initialColor
+    property string colorMode: "HSV"
+    property var customColors: []
 
     signal accepted(string colorHex)
     signal rejected()
+    signal addCustomRequested(string colorHex)
 
     property real hue: 215
     property real saturation: 0.91
@@ -35,6 +38,52 @@ Item {
 
     function hsvToHex() {
         return rgbToHex(Qt.hsva(hue / 360.0, saturation, value, 1.0))
+    }
+
+    function rgbChannel(index) {
+        return parseInt(previewColor.slice(1 + index * 2, 3 + index * 2), 16)
+    }
+
+    function byteToHex(value) {
+        var hex = clamp(Math.round(value), 0, 255).toString(16)
+        return hex.length === 1 ? "0" + hex : hex
+    }
+
+    function setRgbChannel(index, channelValue) {
+        var channels = [rgbChannel(0), rgbChannel(1), rgbChannel(2)]
+        channels[index] = clamp(channelValue, 0, 255)
+        var colorHex = "#" + byteToHex(channels[0]) + byteToHex(channels[1]) + byteToHex(channels[2])
+        setFromHex(colorHex)
+        previewColor = colorHex
+    }
+
+    function channelValue(index) {
+        if (colorMode === "RGB")
+            return rgbChannel(index)
+        if (index === 0)
+            return Math.round(hue)
+        return index === 1 ? Math.round(saturation * 100) : Math.round(value * 100)
+    }
+
+    function channelMaximum(index) {
+        if (colorMode === "RGB")
+            return 255
+        return index === 0 ? 360 : 100
+    }
+
+    function setChannelValue(index, channelValue) {
+        if (colorMode === "RGB") {
+            setRgbChannel(index, channelValue)
+            return
+        }
+
+        if (index === 0)
+            hue = clamp(channelValue, 0, 360)
+        else if (index === 1)
+            saturation = clamp(channelValue / 100.0, 0, 1)
+        else
+            value = clamp(channelValue / 100.0, 0, 1)
+        publishPreview()
     }
 
     function setFromHex(colorHex) {
@@ -168,7 +217,7 @@ Item {
                 anchors.top: swatch.bottom
                 anchors.topMargin: 18
                 width: 260
-                height: 170
+                height: 150
 
                 onPaint: {
                     var context = getContext("2d")
@@ -249,16 +298,32 @@ Item {
                 }
             }
 
-            Column {
+            ComboBox {
+                id: formatSelector
                 anchors.left: hueTrack.right
                 anchors.leftMargin: 28
                 anchors.right: parent.right
                 anchors.rightMargin: 18
                 anchors.top: hueBoard.top
-                spacing: 13
+                height: 30
+                model: ["HSV", "RGB"]
+                currentIndex: root.colorMode === "HSV" ? 0 : 1
+                onActivated: root.colorMode = currentText
+            }
+
+            Column {
+                anchors.left: hueTrack.right
+                anchors.leftMargin: 28
+                anchors.right: parent.right
+                anchors.rightMargin: 18
+                anchors.top: formatSelector.bottom
+                anchors.topMargin: 10
+                spacing: 10
 
                 Repeater {
-                    model: ["Hue", "Saturation", "Value"]
+                    model: root.colorMode === "HSV"
+                           ? ["Hue", "Saturation", "Value"]
+                           : ["Red", "Green", "Blue"]
 
                     delegate: Row {
                         spacing: 8
@@ -271,53 +336,20 @@ Item {
                             font.pixelSize: 12
                         }
 
-                        Rectangle {
-                            width: 24
-                            height: 24
-                            color: "#151A22"
-                            border.color: "#56657A"
-                            Label { anchors.centerIn: parent; text: "-"; color: "#F4F7FB" }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (index === 0)
-                                        root.hue = root.clamp(root.hue - 1, 0, 360)
-                                    else if (index === 1)
-                                        root.saturation = root.clamp(root.saturation - 0.01, 0, 1)
-                                    else
-                                        root.value = root.clamp(root.value - 0.01, 0, 1)
-                                    root.publishPreview()
-                                }
-                            }
-                        }
+                        SpinBox {
+                            id: channelSpinBox
+                            width: 110
+                            height: 28
+                            editable: true
+                            from: 0
+                            to: root.channelMaximum(index)
+                            value: root.channelValue(index)
+                            onValueModified: root.setChannelValue(index, value)
 
-                        Label {
-                            width: 34
-                            anchors.verticalCenter: parent.verticalCenter
-                            horizontalAlignment: Text.AlignHCenter
-                            text: index === 0 ? Math.round(root.hue)
-                                              : (index === 1 ? Math.round(root.saturation * 100)
-                                                             : Math.round(root.value * 100))
-                            color: "#F4F7FB"
-                            font.pixelSize: 12
-                        }
-
-                        Rectangle {
-                            width: 24
-                            height: 24
-                            color: "#151A22"
-                            border.color: "#56657A"
-                            Label { anchors.centerIn: parent; text: "+"; color: "#F4F7FB" }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (index === 0)
-                                        root.hue = root.clamp(root.hue + 1, 0, 360)
-                                    else if (index === 1)
-                                        root.saturation = root.clamp(root.saturation + 0.01, 0, 1)
-                                    else
-                                        root.value = root.clamp(root.value + 0.01, 0, 1)
-                                    root.publishPreview()
+                            Connections {
+                                target: root
+                                function onPreviewColorChanged() {
+                                    channelSpinBox.value = root.channelValue(index)
                                 }
                             }
                         }
@@ -325,11 +357,23 @@ Item {
                 }
             }
 
-            Row {
+            Label {
+                id: basicLabel
                 anchors.left: parent.left
                 anchors.leftMargin: 18
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 18
+                anchors.top: hueBoard.bottom
+                anchors.topMargin: 10
+                text: "Basic colors"
+                color: "#B5C0D0"
+                font.pixelSize: 11
+            }
+
+            Row {
+                id: basicColorRow
+                anchors.left: parent.left
+                anchors.leftMargin: 18
+                anchors.top: basicLabel.bottom
+                anchors.topMargin: 3
                 spacing: 7
 
                 Repeater {
@@ -349,6 +393,57 @@ Item {
                         }
                     }
                 }
+            }
+
+            Label {
+                id: customLabel
+                anchors.left: parent.left
+                anchors.leftMargin: 18
+                anchors.top: basicColorRow.bottom
+                anchors.topMargin: 6
+                text: "Custom colors"
+                color: "#B5C0D0"
+                font.pixelSize: 11
+            }
+
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 18
+                anchors.top: customLabel.bottom
+                anchors.topMargin: 3
+                spacing: 7
+
+                Repeater {
+                    model: root.customColors
+                    delegate: Rectangle {
+                        width: 18
+                        height: 18
+                        radius: 3
+                        color: modelData
+                        border.color: "#718098"
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                root.setFromHex(modelData)
+                                root.publishPreview()
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: 18
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 14
+                width: 86
+                height: 28
+                radius: 3
+                color: "#343E4D"
+                border.color: "#5B6A80"
+                Label { anchors.centerIn: parent; text: "Add custom"; color: "#F4F7FB"; font.pixelSize: 11 }
+                MouseArea { anchors.fill: parent; onClicked: root.addCustomRequested(root.previewColor) }
             }
 
             Rectangle {

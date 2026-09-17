@@ -122,6 +122,8 @@ Window {
         ColorPickerDialog {
             id: colorPicker
             anchors.fill: parent
+            customColors: DemoProperty.customColors === ""
+                          ? [] : DemoProperty.customColors.split(",")
 
             onPreviewColorChanged: {
                 if (visible)
@@ -140,6 +142,11 @@ Window {
                 DemoProperty.pickerVisible = false
                 cancelEvent.binding.clicked()
             }
+
+            onAddCustomRequested: function(colorHex) {
+                DemoProperty.colorHex = colorHex
+                addCustomEvent.binding.clicked()
+            }
         }
 
         Button {
@@ -148,6 +155,14 @@ Window {
             property UIButton binding
             Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.openPickerButton)
             Component.onDestruction: qmlContext.unbind(this, DemoName.openPickerButton)
+        }
+
+        Button {
+            id: addCustomEvent
+            visible: false
+            property UIButton binding
+            Component.onCompleted: binding = qmlContext.bindButton(this, DemoName.addCustomButton)
+            Component.onDestruction: qmlContext.unbind(this, DemoName.addCustomButton)
         }
 
         Button {

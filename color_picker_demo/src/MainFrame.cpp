@@ -113,6 +113,8 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM /*lParam*/)
 
     if (static_cast<QmlClick>(wParam) == kClickApply && m_pViewController)
         m_pViewController->SynchronizeAppliedColor();
+    else if (static_cast<QmlClick>(wParam) == kClickAddCustom && m_pViewController)
+        m_pViewController->AddCurrentCustomColor();
 
     // Reading the numbers back out of the controller is the whole difference
     // this refactor makes: C++ can answer "what is the zoom?" without asking

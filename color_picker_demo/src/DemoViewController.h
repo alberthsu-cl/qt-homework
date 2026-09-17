@@ -38,6 +38,7 @@ public:
     void SetViewportSize(int cx, int cy);
     void PushImage(const std::string& strUrlUtf8, const std::string& strCaptionUtf8);
     void SynchronizeAppliedColor();
+    void AddCurrentCustomColor();
 
 private:
     // ---- these two run ON THE QT THREAD ------------------------------------

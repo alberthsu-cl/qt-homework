@@ -236,3 +236,19 @@ void CDemoViewController::SynchronizeAppliedColor()
                 pContext->property(DemoName.property).propertyString("appliedColorHex"));
     });
 }
+
+void CDemoViewController::AddCurrentCustomColor()
+{
+    IQmlContext* pContext = QtKitHost::Inst().Context();
+    if (!pContext || !m_bQmlReady)
+        return;
+
+    pContext->runOnQtThread([this, pContext]() {
+        if (!pContext->isObjectBound(DemoName.property))
+            return;
+
+        m_pController->SetPendingColorHex(
+            pContext->property(DemoName.property).propertyString("colorHex"));
+        m_pController->AddCustomColor();
+    });
+}
