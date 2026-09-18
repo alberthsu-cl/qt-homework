@@ -39,7 +39,7 @@ msbuild MfcQmlDemo.sln /p:Configuration=Debug /p:Platform=x64
 bin_x64\MfcQmlDemo.exe
 ```
 
-### `color_picker_demo/` - a feature on top of the bridge
+### `color_picker_demo/` - a feature on top of the bridge (homework - 1)
 
 Keeps the hosting shape above and replaces the transform controls with a
 reusable HSV ColorPicker: hue/saturation board, value slider, hex and RGB
@@ -87,14 +87,3 @@ bin_x64\QmlColorPiker.exe "C:\pictures\example.png"
 |---|---|
 | [`doc/QTKIT_ARCHITECTURE.md`](doc/QTKIT_ARCHITECTURE.md) | How the MFC application hosts Qt 6 QML through `QtKit.dll` — module map, boot sequence, binding model, window embedding, threading rules, dual-mode switches, resource pipeline. Mermaid diagrams render in VS Code (the `bierner.markdown-mermaid` extension `bootstrap.bat` installs). |
 | [`doc/QtKit-Bridge.html`](doc/QtKit-Bridge.html) | The same architecture brief as a self-contained HTML page with hand-drawn SVG diagrams. Open it directly in a browser. |
-
-## Next areas to write up
-
-Not started yet — listed so the gap is visible:
-
-- **WorkSpace / Timeline** — the largest unmigrated module, and the one whose
-  dual-maintenance burden the Qt migration is currently paying for.
-- **Agentic Editing API** — `agentic_editing_harness/` submodule plus
-  `docs/features/agentic-editing/`; has its own `add-agentic-tool` skill.
-- **Engine boundary** — CES / Simba / the `IMOSourceProtocol` and
-  `ISimbaSourceProtocol` delegates that feed preview textures into QML.
