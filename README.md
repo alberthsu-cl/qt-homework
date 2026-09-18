@@ -85,7 +85,6 @@ bin_x64\QmlColorPiker.exe "C:\pictures\example.png"
 
 | File | What it covers |
 |---|---|
-| [`doc/BUILD_SETUP.md`](doc/BUILD_SETUP.md) | Why a fresh clone fails to link with `LNK1104: cannot open file 'CtrlFactoryD.lib'`, and the eModule step that fixes it. Includes the failure modes hit on a real first run. |
 | [`doc/QTKIT_ARCHITECTURE.md`](doc/QTKIT_ARCHITECTURE.md) | How the MFC application hosts Qt 6 QML through `QtKit.dll` — module map, boot sequence, binding model, window embedding, threading rules, dual-mode switches, resource pipeline. Mermaid diagrams render in VS Code (the `bierner.markdown-mermaid` extension `bootstrap.bat` installs). |
 | [`doc/QtKit-Bridge.html`](doc/QtKit-Bridge.html) | The same architecture brief as a self-contained HTML page with hand-drawn SVG diagrams. Open it directly in a browser. |
 
