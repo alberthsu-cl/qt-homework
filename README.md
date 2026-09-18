@@ -2,20 +2,19 @@
 
 ## Demo projects
 
-Two standalone MFC applications, each in its own Visual Studio solution. Both
-host Qt 6 QML through `QtKit.dll` the way PowerDirector does, and both are
-deliberately kept separate so either can be opened without ambiguity.
+Three standalone MFC applications, each in its own Visual Studio solution. All
+host Qt 6 QML through `QtKit.dll` the way PowerDirector does, and all are
+deliberately kept separate so any project can be opened without ambiguity.
 
 Neither needs a Qt SDK or a PowerDirector checkout. The repository tracks the
 shared QtKit interface and runtime under `QtKit/`; each project stages that
 runtime into its own `bin_x64/` directory automatically after a build.
 
-| | [`mfc_qml_demo/`](mfc_qml_demo/) | [`color_picker_demo/`](color_picker_demo/) |
-|---|---|---|
-| **Question it answers** | How does MFC host QML at all? | What does a real feature built on that look like? |
-| **The UI** | An image canvas with zoom / rotate icon buttons | A full-screen image viewer, plus an HSV color picker in its own window |
-| **Size** | ~1,100 lines C++, ~400 lines QML | ~1,400 lines C++, ~900 lines QML |
-| **Solution** | `MfcQmlDemo.sln` | `QmlColorPiker.sln` |
+| | [`mfc_qml_demo/`](mfc_qml_demo/) | [`color_picker_demo/`](color_picker_demo/) | [`mini_editor_demo/`](mini_editor_demo/) |
+|---|---|---|---|
+| **Question it answers** | How does MFC host QML at all? | What does a real feature built on that look like? | How should a small editor split its QtKit/QML UI and native state? |
+| **The UI** | An image canvas with zoom / rotate icon buttons | A full-screen image viewer, plus an HSV color picker in its own window | Media library, preview, properties, and a single video/audio timeline |
+| **Solution** | `MfcQmlDemo.sln` | `QmlColorPiker.sln` | `MiniEditorDemo.sln` |
 
 ### `mfc_qml_demo/` - the bridge, minimally
 
@@ -75,10 +74,29 @@ bin_x64\QmlColorPiker.exe
 Both builds stage `QtKit/runtime` automatically. Each project also keeps a
 `stage_runtime.ps1` wrapper for manual `-Clean` or `-Verify` runs.
 
-Both executables also accept an image path, to skip the file dialog:
+The original two executables also accept an image path, to skip the file dialog:
 
 ```bat
 bin_x64\QmlColorPiker.exe "C:\pictures\example.png"
+```
+
+### `mini_editor_demo/` - first mini-editor milestone (homework - 2)
+
+Builds the screenshot-inspired editor shell using separate QML components for
+the media library, preview, playback controls, timeline tracks and clips, and
+clip properties. Native C++ owns the media, timeline, play, and split state;
+QML presents that state and reports user intent through the same QtKit binding
+contract as the earlier demos.
+
+The build remains Qt-SDK-free. It stages the shared QtKit runtime and the
+curated SIMBA/MediaObj playback package from the parent PDR checkout. Image
+preview and the editing-state loop work now; native decoded video frames are
+the documented next adapter step.
+
+```bat
+cd qt-homework\mini_editor_demo
+msbuild MiniEditorDemo.sln /p:Configuration=Debug /p:Platform=x64
+bin_x64\MiniEditorDemo.exe
 ```
 
 ## Documents
