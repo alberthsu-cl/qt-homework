@@ -19,7 +19,7 @@
 #include <functional>
 #include <string>
 
-#include "external include/QtKit/Interface.h"
+#include "QtKit/Interface.h"
 
 // QtKit calls back into the host to build engine-backed QML items (video
 // preview sources, the on-screen editor, the font/colour pickers). PDR wires

@@ -56,6 +56,10 @@ CMakeLists.txt text
 # Baked Qt shader bytecode (qsb). Must never be line-ending converted.
 *.qsb       binary
 
+# Vendored deployment payload. Preserve its exact shipped bytes, including
+# Qt's QML module metadata and style sources; application QML remains text.
+QtKit/runtime/** binary
+
 # -----------------------------------------------------------------------------
 #  GitHub language stats
 #  QtKit-Bridge.html is a write-up, not source. Without this it is the largest

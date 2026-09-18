@@ -97,33 +97,26 @@ because the rules do not live in the adapter.
 
 ## Build and run
 
-The demo *runs* from its **own self-contained folder**, `mfc_qml_demo\bin_x64\`
-- once staged, it loads zero modules from `bin_x64\PowerDirector\`. It does not
-*build* standalone; see [the two out-of-folder dependencies](#housekeeping)
-below. Stage the runtime once, then build:
+The demo builds and runs from its own self-contained folder,
+`mfc_qml_demo\bin_x64\`. The committed `../QtKit` bundle supplies its bridge
+header and runtime, so no PowerDirector checkout or Qt SDK is required:
 
 ```bat
 cd qt-homework\mfc_qml_demo
-powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1
 msbuild MfcQmlDemo.vcxproj /p:Configuration=Debug /p:Platform=x64
 bin_x64\MfcQmlDemo.exe
 ```
 
-`stage_runtime.ps1` copies the minimum runtime set out of
-`bin_x64\PowerDirector\` - see [the inventory below](#what-it-actually-needs-at-runtime).
-Re-run it after `emma` updates QtKit or the Qt6 DLLs; `-Clean` wipes the staged
-files first, `-Verify` prints the resulting tree.
+The build stages the runtime automatically. The compatibility wrapper remains
+available for manual staging and verification:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1 -Verify
+```
 
 Open it in Visual Studio 2022 and F5 works too (there is no `.sln`; VS builds
-a bare `.vcxproj` fine). There is **no Qt SDK requirement** - the only QtKit
-header is `Interface.h`, and the DLL is reached through `LoadLibraryEx`, so the
-demo needs only what a successful PDR build already put on disk.
-
-That header is **not** copied into this folder. It is the PDR working copy's
-own `src\external include\QtKit\Interface.h`, picked up through
-`AdditionalIncludeDirectories = $(ProjectDir)src;$(ProjectDir)..\..\src`. Move
-this folder somewhere that is not two levels below a PDR checkout and the
-compile breaks on the missing include.
+a bare `.vcxproj` fine). The only QtKit header is the committed
+`../QtKit/include/QtKit/Interface.h`; `QtKit.dll` is loaded dynamically.
 
 Optional: pass an image path to skip the file dialog.
 
@@ -365,17 +358,11 @@ you just made:
   `qt-homework/` shows up as an untracked directory.
 
 `bin_x64/` (staged runtime + build output) and `build/` (intermediates) are
-gitignored by **`qt-homework/.gitignore`** (lines 31-32) - the repo root, one
-level up. There is no `.gitignore` in `mfc_qml_demo/` at all, so copy this
-folder out on its own and it carries no ignore rules: the next `git add`
-sweeps in 56 MB of staged Qt runtime.
+gitignored by `qt-homework/.gitignore`. The source-of-truth runtime is the
+explicitly tracked `QtKit/runtime/` bundle at the repository root.
 
-Nothing in `bin_x64/` or `build/` is a source of truth - delete them and re-run
-`stage_runtime.ps1` plus a build.
-
-**The two things this folder reaches outside itself for** are the include path
-above (`..\..\src`, for `Interface.h`) and `stage_runtime.ps1`'s source folder
-(`bin_x64\PowerDirector\`). Both need a PDR checkout two levels up.
+Nothing in `bin_x64/` or `build/` is a source of truth. Delete either directory
+and build again; the post-build step restores the runtime from `QtKit/runtime`.
 
 Earlier revisions of this demo built into PDR's own `bin_x64\PowerDirector\`.
 Don't: that folder is **force-tracked in the PDR repo** despite its root

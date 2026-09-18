@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -43,11 +43,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
 
-  <!-- Self-contained output. The .exe must sit beside QtKit.dll, the Qt6 DLLs
-       and platforms\qwindows.dll for the DLL search path to resolve - but that
-       does NOT have to be the product folder. Run stage_runtime.ps1 once to
-       populate this directory with the minimum runtime set, and the demo runs
-       from its own tree without touching bin_x64\PowerDirector. -->
+  <!-- Self-contained output. The committed ../QtKit bundle supplies both the
+       public bridge header and the runtime copied beside the executable by the
+       post-build event below. No PowerDirector checkout or Qt SDK is needed. -->
   <PropertyGroup>
     <OutDir>$(ProjectDir)bin_x64\</OutDir>
     <IntDir>$(ProjectDir)build\$(Configuration)\</IntDir>
@@ -59,8 +57,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <!-- $(ProjectDir)..\..\src makes "external include/QtKit/Interface.h" resolve -->
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)..\QtKit\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <!-- /MP needs /Zi (not /ZI) and the serialising /FS, or parallel cl.exe
@@ -75,6 +72,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)..\QtKit\stage_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet</Command>
+      <Message>Staging committed QtKit runtime</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">

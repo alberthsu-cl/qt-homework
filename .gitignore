@@ -24,6 +24,13 @@
 *.idb
 *.res
 
+# The homework intentionally carries a self-contained QtKit runtime. Keep the
+# general binary rule above, but allow only this explicitly scoped bundle.
+!QtKit/runtime/**/*.dll
+
+# Per-user ColorPicker preset persistence.
+color_picker_demo/custom_colors.txt
+
 # -----------------------------------------------------------------------------
 #  Build output directories
 # -----------------------------------------------------------------------------

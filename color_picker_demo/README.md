@@ -34,9 +34,16 @@ snapshots the final `colorHex` into C++; Cancel restores the prior applied tint.
 
 ```bat
 cd qt-homework\color_picker_demo
-powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1 -Verify
 msbuild QmlColorPiker.sln /t:Build /p:Configuration=Debug /p:Platform=x64
 bin_x64\QmlColorPiker.exe
+```
+
+The build automatically copies the committed runtime from `../QtKit/runtime`
+into `bin_x64`. To stage or verify it manually, the original command remains
+available:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1 -Verify
 ```
 
 You can also supply an image directly:
@@ -45,8 +52,9 @@ You can also supply an image directly:
 bin_x64\QmlColorPiker.exe "C:\pictures\example.png"
 ```
 
-The runtime requires no Qt SDK. `stage_runtime.ps1` stages the QtKit and Qt6
-files already built for PowerDirector into this homework's own `bin_x64` folder.
+The project requires Visual Studio 2022 with the C++ and MFC components, but no
+Qt SDK and no PowerDirector checkout. The QtKit interface and complete runtime
+are stored in the repository's `QtKit` folder.
 
 ## PDR migration map
 

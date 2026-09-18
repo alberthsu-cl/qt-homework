@@ -6,11 +6,9 @@ Two standalone MFC applications, each in its own Visual Studio solution. Both
 host Qt 6 QML through `QtKit.dll` the way PowerDirector does, and both are
 deliberately kept separate so either can be opened without ambiguity.
 
-Neither needs a Qt SDK. Each ships a `stage_runtime.ps1` that copies the
-minimum QtKit + Qt6 runtime out of `bin_x64\PowerDirector\` into the demo's
-own `bin_x64\` - after which the demo loads nothing from the product output.
-Both do need a built PDR checkout two levels up, for that staging source and
-for `src\external include\QtKit\Interface.h`.
+Neither needs a Qt SDK or a PowerDirector checkout. The repository tracks the
+shared QtKit interface and runtime under `QtKit/`; each project stages that
+runtime into its own `bin_x64/` directory automatically after a build.
 
 | | [`mfc_qml_demo/`](mfc_qml_demo/) | [`color_picker_demo/`](color_picker_demo/) |
 |---|---|---|
@@ -37,7 +35,6 @@ access violation rather than an error message.
 
 ```bat
 cd qt-homework\mfc_qml_demo
-powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1
 msbuild MfcQmlDemo.sln /p:Configuration=Debug /p:Platform=x64
 bin_x64\MfcQmlDemo.exe
 ```
@@ -71,10 +68,12 @@ own DPI sizing intact.
 
 ```bat
 cd qt-homework\color_picker_demo
-powershell -ExecutionPolicy Bypass -File .\stage_runtime.ps1 -Verify
 msbuild QmlColorPiker.sln /p:Configuration=Debug /p:Platform=x64
 bin_x64\QmlColorPiker.exe
 ```
+
+Both builds stage `QtKit/runtime` automatically. Each project also keeps a
+`stage_runtime.ps1` wrapper for manual `-Clean` or `-Verify` runs.
 
 Both executables also accept an image path, to skip the file dialog:
 
