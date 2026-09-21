@@ -7,7 +7,7 @@ Column
     property real scaleValue: 100
     property real opacityValue: 100
     signal resetRequested()
-    spacing: 8
+    spacing: 5
 
     Label
     {
@@ -29,6 +29,7 @@ Column
         Slider
         {
             width: parent.width - 54
+            height: 30
             from: 25
             to: 200
             value: root.scaleValue
@@ -43,7 +44,7 @@ Column
         }
     }
 
-    Item { width: 1; height: 8 }
+    Item { width: 1; height: 3 }
     Label
     {
         width: parent.width
@@ -64,6 +65,7 @@ Column
         Slider
         {
             width: parent.width - 54
+            height: 30
             from: 0
             to: 100
             value: root.opacityValue
@@ -78,7 +80,7 @@ Column
         }
     }
 
-    Item { width: 1; height: 8 }
+    Item { width: 1; height: 3 }
     Label
     {
         width: parent.width
@@ -89,6 +91,7 @@ Column
     ComboBox
     {
         width: parent.width
+        height: 34
         model: ["None", "Brightness", "Contrast", "Saturation", "Invert"]
     }
     Label
@@ -100,15 +103,17 @@ Column
     Slider
     {
         width: parent.width
+        height: 30
         from: 0
         to: 100
         value: 50
     }
 
-    Item { width: 1; height: 8 }
+    Item { width: 1; height: 3 }
     Button
     {
         width: parent.width
+        height: 34
         text: "Reset Adjustments"
         onClicked:
         {

@@ -4,7 +4,7 @@ import QtQuick.Controls
 Rectangle
 {
     id: root
-    implicitHeight: 225
+    implicitHeight: 190
     property bool hasClip: false
     property string mediaName: ""
     property bool playing: false
@@ -33,13 +33,13 @@ Rectangle
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 12
-        height: 38
+        anchors.margins: 8
+        height: 32
 
         Label { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: "Timeline"; color: "#eef2f7"; font.pixelSize: 15; font.bold: true }
-        Button { anchors.left: parent.left; anchors.leftMargin: 78; anchors.verticalCenter: parent.verticalCenter; text: "Split"; enabled: root.hasClip; onClicked: root.splitRequested() }
+        Button { anchors.left: parent.left; anchors.leftMargin: 72; anchors.verticalCenter: parent.verticalCenter; width: 72; height: 30; text: "Split"; enabled: root.hasClip; onClicked: root.splitRequested() }
         Label { id: zoomText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: "100%"; color: "#dce1e8" }
-        Slider { anchors.right: zoomText.left; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; width: 180; from: 25; to: 200; value: 100 }
+        Slider { anchors.right: zoomText.left; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; width: 150; height: 30; from: 25; to: 200; value: 100 }
     }
 
     Item
@@ -48,9 +48,9 @@ Rectangle
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: toolbar.bottom
-        anchors.leftMargin: 12
-        anchors.rightMargin: 12
-        height: 28
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        height: 24
         Repeater
         {
             model: 9
@@ -72,15 +72,31 @@ Rectangle
         anchors.right: parent.right
         anchors.top: ruler.bottom
         anchors.bottom: parent.bottom
-        anchors.margins: 12
+        anchors.margins: 8
         anchors.topMargin: 0
 
         Column
         {
             anchors.fill: parent
-            spacing: 5
-            TimelineTrack { width: parent.width; height: 72; trackName: "V1"; hasClip: root.hasClip; mediaName: root.mediaName; splitCount: root.splitCount }
-            TimelineTrack { width: parent.width; height: 58; trackName: "A1"; hasClip: false; mediaName: ""; splitCount: 0 }
+            spacing: 4
+            TimelineTrack
+            {
+                width: parent.width
+                height: Math.floor((parent.height - parent.spacing) / 2)
+                trackName: "V1"
+                hasClip: root.hasClip
+                mediaName: root.mediaName
+                splitCount: root.splitCount
+            }
+            TimelineTrack
+            {
+                width: parent.width
+                height: Math.floor((parent.height - parent.spacing) / 2)
+                trackName: "A1"
+                hasClip: false
+                mediaName: ""
+                splitCount: 0
+            }
         }
 
         Rectangle

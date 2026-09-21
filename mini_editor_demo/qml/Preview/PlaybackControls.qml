@@ -9,15 +9,16 @@ Rectangle
     signal playRequested()
     signal stopRequested()
     color: "#242932"
-    height: 58
+    height: 46
 
     Button
     {
         id: play
         anchors.left: parent.left
-        anchors.leftMargin: 14
+        anchors.leftMargin: 10
         anchors.verticalCenter: parent.verticalCenter
-        width: 82
+        width: 70
+        height: 32
         text: root.playing ? "Pause" : "Play"
         enabled: root.canPlay
         onClicked: root.playRequested()
@@ -28,7 +29,8 @@ Rectangle
         anchors.left: play.right
         anchors.leftMargin: 8
         anchors.verticalCenter: parent.verticalCenter
-        width: 72
+        width: 62
+        height: 32
         text: "Stop"
         enabled: root.canPlay
         onClicked: root.stopRequested()
@@ -37,7 +39,7 @@ Rectangle
     {
         id: timecode
         anchors.right: parent.right
-        anchors.rightMargin: 14
+        anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
         width: 92
         text: root.playing ? "00:00:05:12" : "00:00:00:00"
@@ -48,8 +50,9 @@ Rectangle
     {
         anchors.left: stop.right
         anchors.right: timecode.left
-        anchors.leftMargin: 12
-        anchors.rightMargin: 12
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        height: 30
         anchors.verticalCenter: parent.verticalCenter
         from: 0
         to: 100

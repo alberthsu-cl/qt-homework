@@ -20,8 +20,8 @@ Rectangle
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: controls.top
-        anchors.margins: 18
-        anchors.bottomMargin: 10
+        anchors.margins: 10
+        anchors.bottomMargin: 6
         color: "#090b0e"
         border.color: "#2d333d"
 

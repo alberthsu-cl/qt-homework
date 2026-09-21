@@ -84,7 +84,7 @@ Window
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 42
+        height: 36
         color: "#20242c"
 
         Label
@@ -139,7 +139,7 @@ Window
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 300
+            width: 260
             hasMedia: MiniEditorProperty.hasMedia
             mediaName: MiniEditorProperty.mediaName
             mediaSource: previewBridge.source
@@ -153,7 +153,7 @@ Window
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 290
+            width: 250
             enabled: MiniEditorProperty.hasTimelineClip
             mediaName: MiniEditorProperty.mediaName
             onResetRequested: if (resetBridge.binding) resetBridge.binding.clicked()

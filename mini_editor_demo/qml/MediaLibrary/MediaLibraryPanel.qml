@@ -16,10 +16,10 @@ Rectangle
         id: title
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.margins: 14
+        anchors.margins: 10
         text: "Media Library"
         color: "#f2f5f8"
-        font.pixelSize: 16
+        font.pixelSize: 14
         font.bold: true
     }
 
@@ -29,11 +29,11 @@ Rectangle
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: title.bottom
-        anchors.margins: 14
-        spacing: 8
+        anchors.margins: 10
+        spacing: 6
 
-        Button { width: (buttons.width - 8) / 2; text: "Import"; onClicked: root.importRequested() }
-        Button { width: (buttons.width - 8) / 2; text: "Add to Timeline"; enabled: root.hasMedia; onClicked: root.addRequested() }
+        Button { width: (buttons.width - 6) / 2; height: 34; text: "Import"; onClicked: root.importRequested() }
+        Button { width: (buttons.width - 6) / 2; height: 34; text: "Add to Timeline"; enabled: root.hasMedia; onClicked: root.addRequested() }
     }
 
     ScrollView
@@ -42,7 +42,7 @@ Rectangle
         anchors.right: parent.right
         anchors.top: buttons.bottom
         anchors.bottom: parent.bottom
-        anchors.margins: 14
+        anchors.margins: 10
         clip: true
 
         Column
