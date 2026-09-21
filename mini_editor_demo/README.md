@@ -84,3 +84,11 @@ Implement a playback adapter behind the controller:
 
 The QML component boundaries and controller commands are already arranged so
 that this work does not require redesigning the UI.
+
+## Engineering plan
+
+Implementation is tracked as an issue graph with architecture decisions and
+explicit verification rules. Start at [`docs/README.md`](docs/README.md), then
+use [`docs/ISSUE_GRAPH.md`](docs/ISSUE_GRAPH.md) for ticket order. M0 proves the
+proprietary runtime and preview transport before M1 connects real source-media
+playback to the finished layout.

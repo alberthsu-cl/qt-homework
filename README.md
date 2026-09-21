@@ -91,7 +91,9 @@ contract as the earlier demos.
 The build remains Qt-SDK-free. It stages the shared QtKit runtime and the
 curated SIMBA/MediaObj playback package from the parent PDR checkout. Image
 preview and the editing-state loop work now; native decoded video frames are
-the documented next adapter step.
+the documented next adapter step. The issue graph, ADRs, milestones, and
+verification rules begin at
+[`mini_editor_demo/docs/README.md`](mini_editor_demo/docs/README.md).
 
 ```bat
 cd qt-homework\mini_editor_demo
