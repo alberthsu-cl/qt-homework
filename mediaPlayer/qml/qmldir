@@ -1,0 +1,2 @@
+singleton MediaPlayerName 1.0 MediaPlayerName.qml
+singleton MediaPlayerProperty 1.0 MediaPlayerProperty.qml

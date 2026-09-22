@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{B12E5212-335B-4AD8-B28D-98E3D7733B9D}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Controllers">
+      <UniqueIdentifier>{6D350877-1E7C-44EF-9707-4AE4B198D9F1}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{8F4C53D0-567C-4F74-A4E4-EC0743308BE2}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx</Extensions>
+    </Filter>
+    <Filter Include="QML">
+      <UniqueIdentifier>{2785524C-D443-4B56-9829-50D1DF54E0EF}</UniqueIdentifier>
+      <Extensions>qml;qmldir</Extensions>
+    </Filter>
+    <Filter Include="QML\Media Library">
+      <UniqueIdentifier>{887B5B7A-CE9E-4F96-B40E-6FCB886ED796}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QML\Preview">
+      <UniqueIdentifier>{58E1148A-D2EF-405D-B9D8-15F9CA11B827}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QML\Properties">
+      <UniqueIdentifier>{EE660A11-E83E-42E7-B931-1EC6D2A24DF8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MediaPlayerApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MainFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\QtKitHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PlaybackRuntimeProbe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MediaPlayerController.cpp">
+      <Filter>Controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MediaPlayerViewController.cpp">
+      <Filter>Controllers</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MainFrame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\QtKitHost.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MediaPlayerNames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MediaPlayerController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MediaPlayerViewController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PlaybackRuntimeProbe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="qml\MediaPlayerWindow.qml">
+      <Filter>QML</Filter>
+    </None>
+    <None Include="qml\MediaPlayerName.qml">
+      <Filter>QML</Filter>
+    </None>
+    <None Include="qml\MediaPlayerProperty.qml">
+      <Filter>QML</Filter>
+    </None>
+    <None Include="qml\qmldir">
+      <Filter>QML</Filter>
+    </None>
+    <None Include="qml\MediaLibrary\MediaLibraryPanel.qml">
+      <Filter>QML\Media Library</Filter>
+    </None>
+    <None Include="qml\MediaLibrary\MediaTile.qml">
+      <Filter>QML\Media Library</Filter>
+    </None>
+    <None Include="qml\Preview\PreviewPanel.qml">
+      <Filter>QML\Preview</Filter>
+    </None>
+    <None Include="qml\Preview\PlaybackControls.qml">
+      <Filter>QML\Preview</Filter>
+    </None>
+    <None Include="qml\Properties\ClipPropertiesPanel.qml">
+      <Filter>QML\Properties</Filter>
+    </None>
+    <None Include="MediaPlayer.manifest" />
+    <None Include="stage_pdr_hosted_demo.ps1" />
+  </ItemGroup>
+</Project>

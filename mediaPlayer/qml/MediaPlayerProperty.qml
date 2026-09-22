@@ -1,0 +1,14 @@
+pragma Singleton
+import QtQuick
+import QtKit
+
+UIProperty
+{
+    property UIProperty binding
+    property string mediaName: ""
+    property bool hasMedia: false
+    property bool playing: false
+
+    Component.onCompleted: binding = qmlContext.bindProperty(this, MediaPlayerName.property)
+    Component.onDestruction: qmlContext.unbind(this, MediaPlayerName.property)
+}

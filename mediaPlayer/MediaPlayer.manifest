@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity
+      type="win32"
+      name="QtHomework.MediaPlayer"
+      version="1.0.0.0"
+      processorArchitecture="amd64" />
+  <file name="runtime\mediacache\MediaObj.dll">
+    <comClass
+        clsid="{302147F3-0A17-4FFF-8978-F8B7A64FCDA7}"
+        threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\CLMediaDetect.dll">
+    <comClass clsid="{815E109B-319E-4FCE-AF62-11F226D2B8AF}" threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\SrcIPCWrapper.ax">
+    <comClass clsid="{F7C573CD-8D53-43FD-B64D-8FF9AAA964BC}" threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\CLCustomSourceReader.ax">
+    <comClass clsid="{DDEDDAEB-EA77-4B5E-AD44-49135F168490}" threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\UpDx11.ax">
+    <comClass clsid="{1AD628F8-3F5B-4198-A056-794BD0B13282}" threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\CLDSPSource.ax">
+    <comClass clsid="{C2F1FBFA-7B74-4015-BBBA-7000CA22498E}" threadingModel="Both" />
+  </file>
+  <file name="runtime\mediacache\CLDSPPlayer.dll">
+    <comClass clsid="{B247AD33-45DA-4B4B-A778-314B96CEBE6E}" threadingModel="Both" />
+    <comClass clsid="{D773C4B6-CE8D-4A26-AA54-4C4A21B0BFCC}" threadingModel="Both" />
+    <comClass clsid="{80AF724B-51A0-40CA-BD49-6382A004E3E4}" threadingModel="Both" />
+    <comClass clsid="{C120A519-AFF1-4BDA-942B-F0A82AB1F90A}" threadingModel="Both" />
+    <comClass clsid="{4B3744ED-6F09-40C4-98B5-084952D17159}" threadingModel="Both" />
+    <comClass clsid="{A03192EB-2D24-41BD-82E3-35E841272047}" threadingModel="Both" />
+    <comClass clsid="{C28873A5-23F9-4187-965C-82A671582559}" threadingModel="Both" />
+    <comClass clsid="{7CBE6336-F53E-4222-97D9-EC09EAF155A6}" threadingModel="Both" />
+    <comClass clsid="{4F457AA3-079A-4FDC-829F-0F70E058BB46}" threadingModel="Both" />
+    <comClass clsid="{F7E57367-721B-40BD-B4A1-9F5D9FD8C3A7}" threadingModel="Both" />
+    <comClass clsid="{A9E2C4F5-8D7B-4A3E-B2C1-5F8E9A7D6C3B}" threadingModel="Both" />
+  </file>
+  <file name="runtime\CES\ReversePlaySrcFilter.ax">
+    <comClass clsid="{DCF5C7B1-E982-45FE-BD28-B66A788B9140}" threadingModel="Both" />
+  </file>
+  <file name="runtime\CES\CL3DDisplayTransform.ax">
+    <comClass clsid="{16D5E16E-2796-4B7C-A6C9-449DC15BA448}" threadingModel="Both" />
+  </file>
+  <file name="runtime\CES\CLAudioFillGapTransform.ax">
+    <comClass clsid="{0D15DB4E-F07D-4255-AEB3-E569BF69B956}" threadingModel="Both" />
+  </file>
+  <file name="runtime\CES\NVVideoEffectFilter.ax">
+    <comClass clsid="{D17DEAD1-58C6-4376-8283-25A2D61869AB}" threadingModel="Both" />
+  </file>
+  <file name="runtime\CES\CLVideoRenderer.ax">
+    <comClass clsid="{42B39E10-13E5-460A-8F1F-D733BF1B25EC}" threadingModel="Both" />
+  </file>
+  <file name="runtime\simba\SIMBA.dll">
+    <comClass
+        clsid="{9CFC585C-D304-4702-8161-28C79478DA1D}"
+        threadingModel="Both" />
+    <comClass clsid="{ACFC585C-D304-4702-8161-28C79478DA0D}" threadingModel="Both" />
+    <comClass clsid="{F05F39DD-636A-4DE1-9782-9171EED5409F}" threadingModel="Both" />
+    <comClass clsid="{B675B59A-F42F-4C92-9D02-2061D04972A5}" threadingModel="Both" />
+    <comClass clsid="{B70A0FA1-BC2E-415A-ACF7-9F8C84FE6F92}" threadingModel="Both" />
+  </file>
+</assembly>

@@ -10,11 +10,11 @@ Neither needs a Qt SDK or a PowerDirector checkout. The repository tracks the
 shared QtKit interface and runtime under `QtKit/`; each project stages that
 runtime into its own `bin_x64/` directory automatically after a build.
 
-| | [`mfc_qml_demo/`](mfc_qml_demo/) | [`color_picker_demo/`](color_picker_demo/) | [`mini_editor_demo/`](mini_editor_demo/) |
+| | [`mfc_qml_demo/`](mfc_qml_demo/) | [`color_picker_demo/`](color_picker_demo/) | [`mediaPlayer/`](mediaPlayer/) |
 |---|---|---|---|
-| **Question it answers** | How does MFC host QML at all? | What does a real feature built on that look like? | How should a small editor split its QtKit/QML UI and native state? |
-| **The UI** | An image canvas with zoom / rotate icon buttons | A full-screen image viewer, plus an HSV color picker in its own window | Media library, preview, properties, and a single video/audio timeline |
-| **Solution** | `MfcQmlDemo.sln` | `QmlColorPiker.sln` | `MiniEditorDemo.sln` |
+| **Question it answers** | How does MFC host QML at all? | What does a real feature built on that look like? | How should a small player split its QtKit/QML UI and native state? |
+| **The UI** | An image canvas with zoom / rotate icon buttons | A full-screen image viewer, plus an HSV color picker in its own window | Media library, source preview, transport, and asset properties |
+| **Solution** | `MfcQmlDemo.sln` | `QmlColorPiker.sln` | `MediaPlayer.sln` |
 
 ### `mfc_qml_demo/` - the bridge, minimally
 
@@ -80,25 +80,23 @@ The original two executables also accept an image path, to skip the file dialog:
 bin_x64\QmlColorPiker.exe "C:\pictures\example.png"
 ```
 
-### `mini_editor_demo/` - first mini-editor milestone (homework - 2)
+### `mediaPlayer/` - media player (homework - 2)
 
-Builds the screenshot-inspired editor shell using separate QML components for
-the media library, preview, playback controls, timeline tracks and clips, and
-clip properties. Native C++ owns the media, timeline, play, and split state;
-QML presents that state and reports user intent through the same QtKit binding
-contract as the earlier demos.
+Builds a screenshot-inspired source player using separate QML components for
+the media library, preview, playback controls, and asset properties. Native
+C++ owns imported media and playback state; QML presents that state and
+reports user intent through the same QtKit binding contract as the earlier
+demos.
 
-The build remains Qt-SDK-free. It stages the shared QtKit runtime and the
-curated SIMBA/MediaObj playback package from the parent PDR checkout. Image
-preview and the editing-state loop work now; native decoded video frames are
-the documented next adapter step. The issue graph, ADRs, milestones, and
-verification rules begin at
-[`mini_editor_demo/docs/README.md`](mini_editor_demo/docs/README.md).
+The build remains Qt-SDK-free. It stages the shared QtKit runtime and uses the
+MediaObj package from the parent PDR checkout. The issue graph, ADRs,
+milestones, and verification rules begin at
+[`mediaPlayer/docs/README.md`](mediaPlayer/docs/README.md).
 
 ```bat
-cd qt-homework\mini_editor_demo
-msbuild MiniEditorDemo.sln /p:Configuration=Debug /p:Platform=x64
-bin_x64\MiniEditorDemo.exe
+cd qt-homework\mediaPlayer
+msbuild MediaPlayer.sln /p:Configuration=Debug /p:Platform=x64
+bin_x64\MediaPlayer.exe
 ```
 
 ## Documents
