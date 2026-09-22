@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 
 CMediaPlayerController::CMediaPlayerController() = default;
 CMediaPlayerController::~CMediaPlayerController() = default;
@@ -15,15 +16,53 @@ void CMediaPlayerController::SetImportedMedia(const std::string& filePath,
 {
     {
         std::lock_guard<std::mutex> guard(m_mediaMutex);
-        m_selectedMedia.id = CreateStableMediaId(filePath);
-        m_selectedMedia.filePath = filePath;
-        m_selectedMedia.sourceUrl = sourceUrl;
-        m_selectedMedia.displayName = displayName;
-        m_selectedMedia.kind = ClassifyMedia(filePath);
+        SelectedMedia asset;
+        asset.id = CreateStableMediaId(filePath);
+        asset.filePath = filePath;
+        asset.sourceUrl = sourceUrl;
+        asset.displayName = displayName;
+        asset.kind = ClassifyMedia(filePath);
+
+        const auto existing = std::find_if(m_catalog.begin(), m_catalog.end(),
+            [&asset](const SelectedMedia& item) { return item.id == asset.id; });
+        if (existing == m_catalog.end())
+        {
+            m_catalog.push_back(asset);
+            m_selectedIndex = m_catalog.size() - 1;
+        }
+        else
+        {
+            *existing = asset;
+            m_selectedIndex = static_cast<size_t>(std::distance(m_catalog.begin(), existing));
+        }
+        m_selectedMedia = m_catalog[m_selectedIndex];
     }
     m_hasMedia = true;
     m_isPlaying = false;
+    LoadSelectedSource(filePath);
     PublishState();
+}
+
+bool CMediaPlayerController::SelectMedia(size_t catalogIndex)
+{
+    bool selected = false;
+    {
+        std::lock_guard<std::mutex> guard(m_mediaMutex);
+        if (catalogIndex < m_catalog.size())
+        {
+            m_selectedIndex = catalogIndex;
+            m_selectedMedia = m_catalog[m_selectedIndex];
+            selected = true;
+        }
+    }
+
+    if (selected)
+    {
+        m_isPlaying = false;
+        LoadSelectedSource(SelectedAsset().filePath);
+        PublishState();
+    }
+    return selected;
 }
 
 void CMediaPlayerController::TogglePlay()
@@ -43,6 +82,18 @@ SelectedMedia CMediaPlayerController::SelectedAsset() const
 {
     std::lock_guard<std::mutex> guard(m_mediaMutex);
     return m_selectedMedia;
+}
+
+std::vector<SelectedMedia> CMediaPlayerController::Catalog() const
+{
+    std::lock_guard<std::mutex> guard(m_mediaMutex);
+    return m_catalog;
+}
+
+SourceMediaInfo CMediaPlayerController::SelectedSourceInfo() const
+{
+    std::lock_guard<std::mutex> guard(m_mediaMutex);
+    return m_selectedSourceInfo;
 }
 
 MediaKind CMediaPlayerController::ClassifyMedia(const std::string& filePath)
@@ -95,6 +146,54 @@ const char* CMediaPlayerController::MediaKindText(MediaKind kind)
     }
 }
 
+std::string CMediaPlayerController::CreateCatalogJson(const std::vector<SelectedMedia>& catalog)
+{
+    const auto escapeJson = [](const std::string& value) {
+        std::ostringstream stream;
+        for (const unsigned char character : value)
+        {
+            switch (character)
+            {
+            case '\\': stream << "\\\\"; break;
+            case '\"': stream << "\\\""; break;
+            case '\n': stream << "\\n"; break;
+            case '\r': stream << "\\r"; break;
+            case '\t': stream << "\\t"; break;
+            default:
+                if (character < 0x20)
+                    stream << " ";
+                else
+                    stream << static_cast<char>(character);
+                break;
+            }
+        }
+        return stream.str();
+    };
+
+    std::ostringstream stream;
+    stream << "[";
+    for (size_t index = 0; index < catalog.size(); ++index)
+    {
+        const SelectedMedia& asset = catalog[index];
+        if (index != 0)
+            stream << ",";
+        stream << "{\"id\":\"" << escapeJson(asset.id)
+               << "\",\"name\":\"" << escapeJson(asset.displayName)
+               << "\",\"kind\":\"" << MediaKindText(asset.kind)
+               << "\",\"source\":\"" << escapeJson(asset.sourceUrl)
+               << "\"}";
+    }
+    stream << "]";
+    return stream.str();
+}
+
+void CMediaPlayerController::LoadSelectedSource(const std::string& filePath)
+{
+    const SourceMediaInfo sourceInfo = m_sourceAdapter.Load(filePath);
+    std::lock_guard<std::mutex> guard(m_mediaMutex);
+    m_selectedSourceInfo = sourceInfo;
+}
+
 void CMediaPlayerController::PublishState()
 {
     IQmlContext* context = QtKitHost::Inst().Context();
@@ -102,10 +201,12 @@ void CMediaPlayerController::PublishState()
         return;
 
     const SelectedMedia asset = SelectedAsset();
+    const std::string catalogJson = CreateCatalogJson(Catalog());
+    const SourceMediaInfo sourceInfo = SelectedSourceInfo();
     const std::string mediaKind = MediaKindText(asset.kind);
     const bool hasMedia = m_hasMedia.load();
     const bool playing = m_isPlaying.load();
-    context->runOnQtThread([context, asset, mediaKind, hasMedia, playing]() {
+    context->runOnQtThread([context, asset, catalogJson, mediaKind, sourceInfo, hasMedia, playing]() {
         if (!context->isObjectBound(MediaPlayerName.property))
             return;
 
@@ -114,6 +215,10 @@ void CMediaPlayerController::PublishState()
         property.property("mediaPath", asset.filePath.c_str());
         property.property("mediaName", asset.displayName.c_str());
         property.property("mediaKind", mediaKind.c_str());
+        property.property("mediaCatalogJson", catalogJson.c_str());
+        property.property("mediaObjLoaded", sourceInfo.loaded);
+        property.property("mediaLoadStatus", sourceInfo.statusText.c_str());
+        property.property("mediaLoadError", static_cast<int>(sourceInfo.errorCode));
         property.property("hasMedia", hasMedia);
         property.property("playing", playing);
     });

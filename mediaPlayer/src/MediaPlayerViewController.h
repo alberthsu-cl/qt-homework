@@ -19,15 +19,19 @@ public:
     void PushMedia(const std::string& mediaPath,
                    const std::string& mediaUrl,
                    const std::string& mediaName);
+    bool ApplyRequestedMediaSelection();
 
 private:
     void OnQtReady();
     void OnQmlDidLoad();
     void WireButtons(IQmlContext* context);
+    void WireSelectionProperty(IQmlContext* context);
+    void UpdateSelectedMediaPreview(IQmlContext* context);
 
     CMediaPlayerController* m_controller{ nullptr };
     HWND m_notifyWindow{ nullptr };
     std::atomic<HWND> m_qmlWindow{ nullptr };
     std::atomic<bool> m_ready{ false };
+    std::atomic<int> m_requestedMediaIndex{ -1 };
     std::string m_qmlEntry;
 };

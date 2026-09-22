@@ -13,7 +13,8 @@ enum QmlClick
     kClickReady = 0,
     kClickImport,
     kClickPlay,
-    kClickStop
+    kClickStop,
+    kClickSelectMedia
 };
 
 class CMediaPlayerController;

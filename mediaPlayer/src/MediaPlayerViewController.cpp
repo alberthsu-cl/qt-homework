@@ -83,9 +83,57 @@ void CMediaPlayerViewController::OnQmlDidLoad()
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
     WireButtons(context);
+    WireSelectionProperty(context);
     m_controller->PublishState();
     m_ready = true;
     ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK, kClickReady, 0);
+}
+
+void CMediaPlayerViewController::WireSelectionProperty(IQmlContext* context)
+{
+    if (!context->isObjectBound(MediaPlayerName.property))
+        return;
+
+    context->property(MediaPlayerName.property).setPropertyChangedAction(
+        "requestedMediaIndex", [this, context]() {
+            if (!context->isObjectBound(MediaPlayerName.property))
+                return;
+
+            const int mediaIndex = context->property(MediaPlayerName.property)
+                .propertyInt("requestedMediaIndex");
+            if (mediaIndex < 0)
+                return;
+
+            m_requestedMediaIndex.store(mediaIndex);
+            ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK, kClickSelectMedia, 0);
+        });
+}
+
+bool CMediaPlayerViewController::ApplyRequestedMediaSelection()
+{
+    const int mediaIndex = m_requestedMediaIndex.exchange(-1);
+    if (mediaIndex < 0 || !m_controller->SelectMedia(static_cast<size_t>(mediaIndex)))
+        return false;
+
+    IQmlContext* context = QtKitHost::Inst().Context();
+    if (context)
+        context->runOnQtThread([this, context]() { UpdateSelectedMediaPreview(context); });
+    return true;
+}
+
+void CMediaPlayerViewController::UpdateSelectedMediaPreview(IQmlContext* context)
+{
+    const SelectedMedia asset = m_controller->SelectedAsset();
+    const SourceMediaInfo sourceInfo = m_controller->SelectedSourceInfo();
+    if (context->isObjectBound(MediaPlayerName.previewImage))
+        context->image(MediaPlayerName.previewImage).source(asset.sourceUrl.c_str());
+    if (context->isObjectBound(MediaPlayerName.statusLabel))
+    {
+        const std::string message = sourceInfo.loaded
+            ? "MediaObj loaded " + asset.displayName + " - preview playback is pending"
+            : sourceInfo.statusText;
+        context->label(MediaPlayerName.statusLabel).text(message.c_str());
+    }
 }
 
 void CMediaPlayerViewController::WireButtons(IQmlContext* context)
@@ -143,13 +191,5 @@ void CMediaPlayerViewController::PushMedia(
         return;
 
     m_controller->SetImportedMedia(mediaPath, mediaUrl, mediaName);
-    context->runOnQtThread([context, mediaUrl, mediaName]() {
-        if (context->isObjectBound(MediaPlayerName.previewImage))
-            context->image(MediaPlayerName.previewImage).source(mediaUrl.c_str());
-        if (context->isObjectBound(MediaPlayerName.statusLabel))
-        {
-            const std::string message = "Imported " + mediaName + " - source playback is pending verification";
-            context->label(MediaPlayerName.statusLabel).text(message.c_str());
-        }
-    });
+    context->runOnQtThread([this, context]() { UpdateSelectedMediaPreview(context); });
 }

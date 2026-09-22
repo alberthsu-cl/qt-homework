@@ -104,6 +104,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_medi
     <ClCompile Include="src\MediaPlayerApp.cpp" />
     <ClCompile Include="src\MainFrame.cpp" />
     <ClCompile Include="src\MediaPlayerController.cpp" />
+    <ClCompile Include="src\MediaObjSourceAdapter.cpp" />
     <ClCompile Include="src\MediaPlayerViewController.cpp" />
     <ClCompile Include="src\QtKitHost.cpp" />
     <ClCompile Include="src\PlaybackRuntimeProbe.cpp" />
@@ -115,6 +116,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_medi
     <ClInclude Include="src\QtKitHost.h" />
     <ClInclude Include="src\MediaPlayerNames.h" />
     <ClInclude Include="src\MediaPlayerController.h" />
+    <ClInclude Include="src\MediaObjSourceAdapter.h" />
     <ClInclude Include="src\MediaPlayerViewController.h" />
     <ClInclude Include="src\PlaybackRuntimeProbe.h" />
   </ItemGroup>

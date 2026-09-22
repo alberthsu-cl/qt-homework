@@ -4,11 +4,10 @@ import QtQuick.Controls
 Rectangle
 {
     id: root
-    property bool hasMedia: false
-    property string mediaName: ""
-    property string mediaKind: "Unknown"
-    property string mediaSource: ""
+    property var mediaCatalog: []
+    property string selectedMediaId: ""
     signal importRequested()
+    signal mediaSelected(int mediaIndex)
     color: "#20242c"
 
     Label
@@ -48,19 +47,23 @@ Rectangle
         {
             width: parent.width
             spacing: 10
-            MediaTile
+            Repeater
             {
-                width: parent.width
-                visible: root.hasMedia
-                title: root.mediaName
-                mediaKind: root.mediaKind
-                source: root.mediaSource
-                selected: true
+                model: root.mediaCatalog
+                delegate: MediaTile
+                {
+                    width: parent.width
+                    title: modelData.name
+                    mediaKind: modelData.kind
+                    source: modelData.source
+                    selected: modelData.id === root.selectedMediaId
+                    onActivated: root.mediaSelected(index)
+                }
             }
             Label
             {
                 width: parent.width
-                visible: !root.hasMedia
+                visible: root.mediaCatalog.length === 0
                 topPadding: 60
                 text: "No media imported\n\nUse Import to add a video,\naudio file, or image."
                 color: "#7f8996"

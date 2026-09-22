@@ -19,8 +19,9 @@ std::string ToUtf8(const CString& value)
     const int size = ::WideCharToMultiByte(CP_UTF8, 0, value, -1, nullptr, 0, nullptr, nullptr);
     if (size <= 1)
         return std::string();
-    std::string result(static_cast<size_t>(size - 1), '\0');
+    std::string result(static_cast<size_t>(size), '\0');
     ::WideCharToMultiByte(CP_UTF8, 0, value, -1, &result[0], size, nullptr, nullptr);
+    result.pop_back();
     return result;
 }
 
@@ -87,6 +88,12 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM)
     if (click == kClickImport)
     {
         OnFileImport();
+        return 0;
+    }
+
+    if (click == kClickSelectMedia)
+    {
+        m_viewController->ApplyRequestedMediaSelection();
         return 0;
     }
 

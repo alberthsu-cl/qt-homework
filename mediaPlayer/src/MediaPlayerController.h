@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <vector>
+
+#include "MediaObjSourceAdapter.h"
 
 enum class MediaKind
 {
@@ -31,6 +34,7 @@ public:
     void SetImportedMedia(const std::string& filePath,
                           const std::string& sourceUrl,
                           const std::string& displayName);
+    bool SelectMedia(size_t catalogIndex);
     void TogglePlay();
     void Stop();
     void PublishState();
@@ -38,14 +42,22 @@ public:
     bool HasMedia() const { return m_hasMedia.load(); }
     bool IsPlaying() const { return m_isPlaying.load(); }
     SelectedMedia SelectedAsset() const;
+    std::vector<SelectedMedia> Catalog() const;
+    SourceMediaInfo SelectedSourceInfo() const;
 
 private:
     static MediaKind ClassifyMedia(const std::string& filePath);
     static std::string CreateStableMediaId(const std::string& filePath);
     static const char* MediaKindText(MediaKind kind);
+    static std::string CreateCatalogJson(const std::vector<SelectedMedia>& catalog);
+    void LoadSelectedSource(const std::string& filePath);
 
     std::atomic<bool> m_hasMedia{ false };
     std::atomic<bool> m_isPlaying{ false };
     mutable std::mutex m_mediaMutex;
+    std::vector<SelectedMedia> m_catalog;
+    size_t m_selectedIndex{ 0 };
     SelectedMedia m_selectedMedia;
+    SourceMediaInfo m_selectedSourceInfo;
+    CMediaObjSourceAdapter m_sourceAdapter;
 };

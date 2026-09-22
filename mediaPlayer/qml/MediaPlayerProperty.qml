@@ -9,6 +9,11 @@ UIProperty
     property string mediaPath: ""
     property string mediaName: ""
     property string mediaKind: "Unknown"
+    property string mediaCatalogJson: "[]"
+    property int requestedMediaIndex: -1
+    property bool mediaObjLoaded: false
+    property string mediaLoadStatus: ""
+    property int mediaLoadError: 0
     property bool hasMedia: false
     property bool playing: false
 

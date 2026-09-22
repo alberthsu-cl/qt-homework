@@ -101,11 +101,16 @@ Window
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: 260
-            hasMedia: MediaPlayerProperty.hasMedia
-            mediaName: MediaPlayerProperty.mediaName
-            mediaKind: MediaPlayerProperty.mediaKind
-            mediaSource: previewBridge.source
+            mediaCatalog: {
+                try {
+                    return JSON.parse(MediaPlayerProperty.mediaCatalogJson)
+                } catch (error) {
+                    return []
+                }
+            }
+            selectedMediaId: MediaPlayerProperty.mediaId
             onImportRequested: if (importBridge.binding) importBridge.binding.clicked()
+            onMediaSelected: MediaPlayerProperty.requestedMediaIndex = mediaIndex
         }
 
         Properties.ClipPropertiesPanel
