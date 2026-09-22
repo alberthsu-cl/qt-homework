@@ -94,6 +94,15 @@ session needs and why.
 A failed bring-up must leave a usable shell with an actionable diagnostic, not
 a crash or a silent empty timeline.
 
+**Finding from H3-01, and a problem for this ticket.** After running the mode
+end to end, no PDR log file appeared anywhere under `AppData`. The host's
+`LOGGER_INFO` calls are compiled in and the code path demonstrably ran, so the
+prelude evidently does not stand up the file logger the full application does
+(`InitBoomerang` is not on this path). "Actionable diagnostic" therefore cannot
+mean `LOGGER_ERROR` alone -- on this path that may go nowhere retrievable.
+H3-02 must either initialize the logger for this mode or surface bring-up
+failure somewhere the user actually sees, and say in its evidence which it did.
+
 ### H3-03 - Movie binding
 
 Create a working movie through `IMovieHost` / `SimbaMovieHost`, bind
