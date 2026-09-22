@@ -11,12 +11,6 @@ public:
         CWinApp::InitInstance();
 
         if (__argc > 1 && __targv && __targv[1] &&
-            _wcsicmp(__targv[1], L"--probe-simba-child") == 0)
-        {
-            ::ExitProcess(static_cast<UINT>(CPlaybackRuntimeProbe::RunSimbaChild()));
-        }
-
-        if (__argc > 1 && __targv && __targv[1] &&
             _wcsicmp(__targv[1], L"--probe-playback-runtime") == 0)
         {
             wchar_t executablePath[MAX_PATH] = { 0 };
@@ -25,6 +19,19 @@ public:
             ::PathAddBackslashW(executablePath);
             const PlaybackRuntimeProbeResult probe = CPlaybackRuntimeProbe::Run(executablePath);
             ::ExitProcess(probe.IsReady() ? ERROR_SUCCESS : ERROR_OPEN_FAILED);
+        }
+
+        if (__argc > 2 && __targv && __targv[1] && __targv[2] &&
+            _wcsicmp(__targv[1], L"--probe-mediaobj") == 0)
+        {
+            wchar_t executablePath[MAX_PATH] = { 0 };
+            ::GetModuleFileNameW(nullptr, executablePath, MAX_PATH);
+            ::PathRemoveFileSpecW(executablePath);
+            ::PathAddBackslashW(executablePath);
+            const PlaybackRuntimeProbeResult probe = CPlaybackRuntimeProbe::RunSourceProbe(
+                executablePath, __targv[2]);
+            ::ExitProcess(probe.IsReady() && probe.sourceOpened
+                ? ERROR_SUCCESS : ERROR_OPEN_FAILED);
         }
 
         CMainFrame* frame = new CMainFrame;

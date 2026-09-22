@@ -105,6 +105,7 @@
       <Filter>QML\Properties</Filter>
     </None>
     <None Include="MediaPlayer.manifest" />
+    <None Include="stage_mediaobj_runtime.ps1" />
     <None Include="stage_pdr_hosted_demo.ps1" />
   </ItemGroup>
 </Project>

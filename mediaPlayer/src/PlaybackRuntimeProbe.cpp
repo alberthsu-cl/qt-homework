@@ -12,17 +12,33 @@
 
 namespace {
 
-// These identifiers are copied from the checked-in PDR MediaGUIDs.h and
-// SIMBAGUID.h. The probe intentionally uses only IUnknown so proprietary
-// engine headers do not become a dependency of this standalone project.
+// This identifier is copied from the checked-in PDR MediaGUIDs.h. The narrow
+// interface below is intentionally self-contained so this homework does not
+// take a compile-time dependency on PDR's MediaObj headers.
 const GUID kClsidMediaObj =
 { 0x302147f3, 0x0a17, 0x4fff, { 0x89, 0x78, 0xf8, 0xb7, 0xa6, 0x4f, 0xcd, 0xa7 } };
-const GUID kIidMediaObj13 =
-{ 0x35eb2c0c, 0x373f, 0x4abb, { 0xaa, 0xe1, 0x62, 0x25, 0xcb, 0x35, 0x8e, 0xcc } };
-const GUID kClsidSimba =
-{ 0x9cfc585c, 0xd304, 0x4702, { 0x81, 0x61, 0x28, 0xc7, 0x94, 0x78, 0xda, 0x1d } };
-const GUID kIidSimbaMovieEdit3 =
-{ 0xf9572f02, 0x644a, 0x4495, { 0x8f, 0x0e, 0x96, 0x4e, 0x1f, 0x7a, 0x52, 0x11 } };
+const GUID kIidMediaObj8 =
+{ 0x201f0102, 0x23bd, 0x4ddd, { 0xa0, 0x44, 0xb0, 0x2b, 0x71, 0x0a, 0xc2, 0x79 } };
+
+const DWORD kMediaInfoTypeMediaType = 0x0000;
+const DWORD kMediaInfoTypeWidth = 0x0004;
+const DWORD kMediaInfoTypeHeight = 0x0005;
+const DWORD kMediaInfoTypeDuration = 0x0007;
+const UINT kMediaTypeAudio = 0x03;
+
+// The first IMEDIAOBJ8 methods, copied verbatim in ABI order. We need only
+// LoadClip, GetMediaInfo, and Unload for the source-open verification.
+struct IMediaObj8Probe : IUnknown
+{
+    virtual void STDMETHODCALLTYPE SetEventCB(void* callback, void* caller) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetDisplayWnd(HWND parent, RECT rectangle) = 0;
+    virtual HRESULT STDMETHODCALLTYPE LoadClip(LPSTR path, LONGLONG start, LONGLONG stop,
+                                               BOOL alwaysRender) = 0;
+    virtual HRESULT STDMETHODCALLTYPE LoadClip(LPWSTR path, LONGLONG start, LONGLONG stop,
+                                               BOOL alwaysRender) = 0;
+    virtual void STDMETHODCALLTYPE Unload() = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetMediaInfo(DWORD type, LPVOID value) = 0;
+};
 
 struct FileProbe
 {
@@ -169,44 +185,40 @@ std::wstring RegisteredServerPath(const GUID& clsid)
     return value.data();
 }
 
-bool ProbeComClass(const wchar_t* label,
-                   const GUID& clsid,
-                   const GUID& requiredInterface,
-                   bool& comInitialized)
+bool ProbeMediaObjActivation(bool& comInitialized)
 {
     const HRESULT comResult = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     comInitialized = SUCCEEDED(comResult);
     const std::wstring comText = FormatHResult(comResult);
-    QtKitHost::Log("[M0-01] %ls CoInitializeEx(MTA): %s (%ls)", label,
+    QtKitHost::Log("[M0-01] MediaObj CoInitializeEx(MTA): %s (%ls)",
                    comInitialized ? "ok" : "FAILED", comText.c_str());
     if (!comInitialized)
         return false;
 
-    const std::wstring registeredServer = RegisteredServerPath(clsid);
-    QtKitHost::Log("[M0-01] %ls registry server: %ls", label,
+    const std::wstring registeredServer = RegisteredServerPath(kClsidMediaObj);
+    QtKitHost::Log("[M0-01] MediaObj registry server: %ls",
                    registeredServer.empty() ? L"<not registered>" : registeredServer.c_str());
 
     IUnknown* object = nullptr;
     const HRESULT activateResult = ::CoCreateInstance(
-        clsid, nullptr, CLSCTX_INPROC_SERVER, IID_IUnknown,
+        kClsidMediaObj, nullptr, CLSCTX_INPROC_SERVER, IID_IUnknown,
         reinterpret_cast<void**>(&object));
     if (FAILED(activateResult) || !object)
     {
         const std::wstring text = FormatHResult(activateResult);
-        QtKitHost::Log("[M0-01] %ls activation FAILED: %ls", label, text.c_str());
+        QtKitHost::Log("[M0-01] MediaObj activation FAILED: %ls", text.c_str());
         ::CoUninitialize();
         return false;
     }
 
     void* required = nullptr;
-    const HRESULT queryResult = object->QueryInterface(requiredInterface, &required);
+    const HRESULT queryResult = object->QueryInterface(kIidMediaObj8, &required);
     if (required)
         reinterpret_cast<IUnknown*>(required)->Release();
     object->Release();
 
     const std::wstring text = FormatHResult(queryResult);
-    QtKitHost::Log("[M0-01] %ls activation ok; required interface %ls: %s (%ls)",
-                   label, GuidText(requiredInterface).c_str(),
+    QtKitHost::Log("[M0-01] MediaObj activation ok; IMEDIAOBJ8 %s (%ls)",
                    SUCCEEDED(queryResult) ? "ok" : "FAILED", text.c_str());
 
     ULONG_PTR contextToken = 0;
@@ -217,52 +229,10 @@ bool ProbeComClass(const wchar_t* label,
     }
     else
     {
-        QtKitHost::Log("[M0-01] %ls release removed the probe COM scope: %ls",
-                       label, FormatHResult(contextResult).c_str());
+        QtKitHost::Log("[M0-01] MediaObj release removed the probe COM scope: %ls",
+                       FormatHResult(contextResult).c_str());
     }
     return SUCCEEDED(queryResult);
-}
-
-bool ProbeSimbaOutOfProcess()
-{
-    wchar_t executablePath[MAX_PATH] = { 0 };
-    ::GetModuleFileNameW(nullptr, executablePath, MAX_PATH);
-    const std::wstring executable = executablePath;
-    const size_t separator = executable.find_last_of(L"\\/");
-    const std::wstring workingDirectory = separator == std::wstring::npos
-        ? std::wstring() : executable.substr(0, separator);
-    std::wstring commandLine = L"\"" + executable + L"\" --probe-simba-child";
-    std::vector<wchar_t> mutableCommand(commandLine.begin(), commandLine.end());
-    mutableCommand.push_back(L'\0');
-
-    STARTUPINFOW startup = { 0 };
-    startup.cb = sizeof(startup);
-    PROCESS_INFORMATION process = { 0 };
-    if (!::CreateProcessW(executable.c_str(), mutableCommand.data(), nullptr, nullptr,
-                          FALSE, CREATE_NO_WINDOW, nullptr, workingDirectory.c_str(),
-                          &startup, &process))
-    {
-        QtKitHost::Log("[M0-01] SIMBA child probe failed to start (win32=%lu)",
-                       ::GetLastError());
-        return false;
-    }
-
-    const DWORD waitResult = ::WaitForSingleObject(process.hProcess, 30000);
-    DWORD exitCode = ERROR_TIMEOUT;
-    if (waitResult == WAIT_OBJECT_0)
-    {
-        ::GetExitCodeProcess(process.hProcess, &exitCode);
-    }
-    else
-    {
-        ::TerminateProcess(process.hProcess, ERROR_TIMEOUT);
-        ::WaitForSingleObject(process.hProcess, 5000);
-    }
-
-    ::CloseHandle(process.hThread);
-    ::CloseHandle(process.hProcess);
-    QtKitHost::Log("[M0-01] SIMBA child probe exit: 0x%08lX", exitCode);
-    return exitCode == ERROR_SUCCESS;
 }
 
 } // namespace
@@ -270,39 +240,97 @@ bool ProbeSimbaOutOfProcess()
 PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::Run(const std::wstring& executableDirectory)
 {
     PlaybackRuntimeProbeResult result;
-    QtKitHost::Log("[M0-01] ==== playback runtime activation probe ====");
+    QtKitHost::Log("[M0-01] ==== MO-only runtime activation probe ====");
 
-    const FileProbe simba = ProbeFile(executableDirectory, L"runtime\\simba\\SIMBA.dll", L"SIMBA.dll");
     const FileProbe mediaObj = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObj.dll", L"MediaObj.dll");
     const FileProbe mediaObjExt = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObjExt.dll", L"MediaObjExt.dll");
     const FileProbe mediaObjIni = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObj.ini", L"MediaObj.ini");
 
-    result.runtimeFilesPresent = simba.present && simba.is64Bit && mediaObj.present &&
-        mediaObj.is64Bit && mediaObjExt.present && mediaObjExt.is64Bit && mediaObjIni.present;
+    result.runtimeFilesPresent = mediaObj.present && mediaObj.is64Bit &&
+        mediaObjExt.present && mediaObjExt.is64Bit && mediaObjIni.present;
     if (!result.runtimeFilesPresent)
     {
-        result.statusText = L"Playback runtime unavailable - staged files are missing or not x64. See MediaPlayer.log.";
-        QtKitHost::Log("[M0-01] RESULT: staged runtime incomplete");
+        result.statusText = L"MO-only runtime unavailable - staged files are missing or not x64. See MediaPlayer.log.";
+        QtKitHost::Log("[M0-01] RESULT: MO-only staged runtime incomplete");
         return result;
     }
 
     bool mediaObjComInitialized = false;
-    result.mediaObjActivated = ProbeComClass(
-        L"MediaObj", kClsidMediaObj, kIidMediaObj13, mediaObjComInitialized);
-    result.simbaActivated = ProbeSimbaOutOfProcess();
+    result.mediaObjActivated = ProbeMediaObjActivation(mediaObjComInitialized);
     result.comInitialized = mediaObjComInitialized;
 
     result.statusText = result.IsReady()
-        ? L"Playback runtime ready - M0 activation probe passed."
-        : L"Playback runtime unavailable - activation details are in MediaPlayer.log.";
+        ? L"MO-only runtime ready - activation probe passed."
+        : L"MO-only runtime unavailable - activation details are in MediaPlayer.log.";
     QtKitHost::Log("[M0-01] RESULT: %s", result.IsReady() ? "pass" : "FAILED");
     return result;
 }
 
-int CPlaybackRuntimeProbe::RunSimbaChild()
+PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
+    const std::wstring& executableDirectory,
+    const std::wstring& sourcePath)
 {
-    bool comInitialized = false;
-    const bool activated = ProbeComClass(
-        L"SIMBA-child", kClsidSimba, kIidSimbaMovieEdit3, comInitialized);
-    return comInitialized && activated ? ERROR_SUCCESS : ERROR_OPEN_FAILED;
+    PlaybackRuntimeProbeResult result = Run(executableDirectory);
+    if (!result.IsReady())
+        return result;
+
+    if (sourcePath.empty() || ::GetFileAttributesW(sourcePath.c_str()) == INVALID_FILE_ATTRIBUTES)
+    {
+        QtKitHost::Log("[M0-02] source missing: %ls", sourcePath.c_str());
+        result.statusText = L"MO-only source probe failed: source file is missing.";
+        return result;
+    }
+
+    const HRESULT comResult = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(comResult))
+    {
+        QtKitHost::Log("[M0-02] CoInitializeEx failed: %ls", FormatHResult(comResult).c_str());
+        result.statusText = L"MO-only source probe failed: COM initialization failed.";
+        return result;
+    }
+
+    IMediaObj8Probe* mediaObj = nullptr;
+    const HRESULT createResult = ::CoCreateInstance(
+        kClsidMediaObj, nullptr, CLSCTX_INPROC_SERVER, kIidMediaObj8,
+        reinterpret_cast<void**>(&mediaObj));
+    if (FAILED(createResult) || !mediaObj)
+    {
+        QtKitHost::Log("[M0-02] MediaObj creation failed: %ls", FormatHResult(createResult).c_str());
+        ::CoUninitialize();
+        result.statusText = L"MO-only source probe failed: MediaObj creation failed.";
+        return result;
+    }
+
+    std::vector<wchar_t> mutablePath(sourcePath.begin(), sourcePath.end());
+    mutablePath.push_back(L'\0');
+    const HRESULT loadResult = mediaObj->LoadClip(mutablePath.data(), 0, 0, FALSE);
+    QtKitHost::Log("[M0-02] LoadClip(%ls): %ls", sourcePath.c_str(), FormatHResult(loadResult).c_str());
+    if (SUCCEEDED(loadResult))
+    {
+        UINT mediaType = 0;
+        UINT width = 0;
+        UINT height = 0;
+        LONGLONG duration = 0;
+        const HRESULT mediaTypeResult = mediaObj->GetMediaInfo(kMediaInfoTypeMediaType, &mediaType);
+        const HRESULT widthResult = mediaObj->GetMediaInfo(kMediaInfoTypeWidth, &width);
+        const HRESULT heightResult = mediaObj->GetMediaInfo(kMediaInfoTypeHeight, &height);
+        const HRESULT durationResult = mediaObj->GetMediaInfo(kMediaInfoTypeDuration, &duration);
+        QtKitHost::Log("[M0-02] metadata: type=%u (%ls), size=%ux%u (%ls, %ls), duration100ns=%lld (%ls)",
+            mediaType, FormatHResult(mediaTypeResult).c_str(), width, height,
+            FormatHResult(widthResult).c_str(), FormatHResult(heightResult).c_str(),
+            duration, FormatHResult(durationResult).c_str());
+        const bool hasDimensions = SUCCEEDED(widthResult) && SUCCEEDED(heightResult);
+        const bool hasDuration = SUCCEEDED(durationResult) && duration > 0;
+        result.sourceOpened = SUCCEEDED(mediaTypeResult) &&
+            (mediaType == kMediaTypeAudio ? hasDuration : hasDimensions);
+    }
+
+    mediaObj->Unload();
+    mediaObj->Release();
+    ::CoUninitialize();
+    result.statusText = result.sourceOpened
+        ? L"MO-only source probe passed."
+        : L"MO-only source probe failed. See MediaPlayer.log.";
+    QtKitHost::Log("[M0-02] RESULT: %s", result.sourceOpened ? "pass" : "FAILED");
+    return result;
 }

@@ -77,9 +77,8 @@
     </Manifest>
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)..\QtKit\stage_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_playback_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_pdr_hosted_demo.ps1" -SourceExecutable "$(TargetPath)" -Quiet</Command>
-      <Message>Staging private runtimes and deploying Media Player beside PDR.exe</Message>
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_mediaobj_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet</Command>
+      <Message>Staging QtKit and the MO-only source runtime beside MediaPlayer.exe</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
@@ -132,7 +131,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_pdr_
     <None Include="qml\qmldir" />
     <None Include="README.md" />
     <None Include="MediaPlayer.manifest" />
-    <None Include="stage_playback_runtime.ps1" />
+    <None Include="stage_mediaobj_runtime.ps1" />
     <None Include="stage_pdr_hosted_demo.ps1" />
   </ItemGroup>
 

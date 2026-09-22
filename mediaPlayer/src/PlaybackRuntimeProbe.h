@@ -7,24 +7,24 @@ struct PlaybackRuntimeProbeResult
     bool runtimeFilesPresent{ false };
     bool comInitialized{ false };
     bool mediaObjActivated{ false };
-    bool simbaActivated{ false };
+    bool sourceOpened{ false };
     std::wstring statusText;
 
     bool IsReady() const
     {
-        return runtimeFilesPresent && comInitialized && mediaObjActivated && simbaActivated;
+        return runtimeFilesPresent && comInitialized && mediaObjActivated;
     }
 };
 
 class CPlaybackRuntimeProbe
 {
 public:
-    // Runs on the MFC main thread. It verifies the staged files and proves
-    // COM activation only; it never retains an engine interface.
+    // Runs on the MFC main thread. It verifies the MO-only package and proves
+    // registration-free COM activation without retaining an engine interface.
     static PlaybackRuntimeProbeResult Run(const std::wstring& executableDirectory);
 
-    // Internal child-process entry point. SIMBA can fault during construction
-    // when its broader PDR runtime context is incomplete, so the main UI never
-    // executes this probe in-process.
-    static int RunSimbaChild();
+    // Opens and inspects one source without creating a preview window.
+    static PlaybackRuntimeProbeResult RunSourceProbe(
+        const std::wstring& executableDirectory,
+        const std::wstring& sourcePath);
 };

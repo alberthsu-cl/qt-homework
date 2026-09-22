@@ -52,19 +52,16 @@ bin_x64\MediaPlayer.exe
 The post-build event stages two runtimes beside the executable:
 
 1. `..\QtKit\runtime` supplies QtKit and Qt 6 runtime files.
-2. `..\..\external_bin\runtime` supplies the curated SIMBA/MediaObj playback
-   package through `stage_playback_runtime.ps1`.
+2. `..\..\external_bin\runtime\mediacache` supplies the MO-only source
+   package through `stage_mediaobj_runtime.ps1`.
 
 No Qt headers, import libraries, `moc`, CMake Qt discovery, or installed Qt SDK
 are used. The application includes only the pure virtual QtKit bridge header
 from `..\QtKit\include` and loads `QtKit.dll` dynamically.
 
-Each successful build also deploys `MediaPlayer.exe` beside `PDR.exe` in
-`..\..\bin_x64\PowerDirector`, along with a private `MediaPlayerQml`
-folder. It does not copy or overwrite PDR's QtKit or playback runtime files.
-This PDR-hosted copy is useful when testing the executable against the product
-runtime environment; the normal self-contained `bin_x64` build remains the
-default development launch.
+The normal self-contained `bin_x64` build is the default development launch.
+`stage_pdr_hosted_demo.ps1` remains available as an explicit product-runtime
+comparison tool, but it is not run by the build.
 
 An optional media path can be supplied on the command line:
 
@@ -74,21 +71,30 @@ bin_x64\MediaPlayer.exe "C:\media\sample.jpg"
 
 Startup and QML diagnostics are written to `%TEMP%\MediaPlayer.log`.
 The editor does not activate proprietary engines during ordinary startup.
-Run the opt-in diagnostic below when reviewing the staged playback runtime:
+Run the opt-in activation diagnostic below when reviewing the staged MO-only
+runtime:
 
 ```powershell
 .\bin_x64\MediaPlayer.exe --probe-playback-runtime
 ```
 
-`ME-M0-01` records staged playback-runtime paths, their
-architecture, registered COM server paths, and MediaObj/SIMBA activation
-results. A copied DLL is not treated as activated until its COM class and
-required interface have both been verified.
+`ME-M0-01` records staged MO runtime paths, their architecture, registered
+COM server paths, and MediaObj activation results. A copied DLL is not treated
+as activated until its COM class and required interface have both been
+verified. To probe an actual source without starting the UI:
 
-MediaObj and SIMBA use registration-free COM. `MediaPlayer.manifest` is
-merged into the executable and maps the engine and supporting COM classes to
-their staged DLL paths. Running `regsvr32` or installing machine-wide COM
-entries is not required.
+```powershell
+.\bin_x64\MediaPlayer.exe --probe-mediaobj "C:\media\sample.mp3"
+```
+
+The current MO-only bundle opens the supplied MP3 sample and reads its
+metadata. JPEG and MP4 source loading remain a separate dependency-discovery
+step; they are not claimed as portable yet.
+
+MediaObj uses registration-free COM. `MediaPlayer.manifest` is merged into the
+executable and maps the engine and supporting MO classes to their staged DLL
+paths. Running `regsvr32` or installing machine-wide COM entries is not
+required.
 
 ## Engineering plan
 
