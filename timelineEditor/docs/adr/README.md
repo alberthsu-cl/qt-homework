@@ -39,12 +39,22 @@ two postures cleanly:
 | Preview-only | `CMcpHostWindow`, `EngineTestHostWindow`, `CICDProcedure` | `SetSuppressEditMode(true)` |
 | Interactive editing | launcher, main panel, `CBatchHostWindow`, `StatusCenter` | `SetSuppressEditMode(false)` + `RestoreEditMode()` |
 
-Homework-3 edits, so it takes the second. This matters more than a flag name
-suggests: with edit mode suppressed, `RestoreEditMode()` is ignored outright,
-and the timeline writes H3-05 depends on would not take effect. Copying
-`EngineTestHostWindow` verbatim -- which the H3-02 plan text originally said to
-do -- would have produced a timeline that silently accepted every edit and
-applied none.
+Homework-3 takes the second, but the reason recorded here at first was wrong
+and is corrected as of H3-03. **Edit mode does not gate whether Simba accepts a
+timeline write.** Every caller of `IsEnableEditMode()` is in display/preview
+code (`displaypanel.cpp`, frame-wait logic) -- none of it is a timeline
+mutation path. `McpToolDispatcher` proves it directly: MCP performs real
+`HeadlessTimeline` edits (`add_clip` and the rest of the Iris tool set) with
+edit mode **suppressed**. Copying `EngineTestHostWindow` verbatim would not
+have dropped edits; that specific claim was wrong.
+
+What edit mode actually controls is the **display panel's live-scrub preview
+behavior** during an edit -- whether the shown frame updates the way an
+interactive editor's does, versus a plainer preview path. Homework-3 still
+takes the interactive posture, because H3-06's preview wants that live-edit
+frame behavior (matching what `CBatchHostWindow` sets up for its own
+produce-verification renders), not because the alternative would silently
+no-op writes.
 
 **How does a QML preview receive frames?** (ADR-0003, asked of H3-06, answered
 early while researching the above.) Through `EnterRenderlessMode(callback)`.
