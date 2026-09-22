@@ -22,10 +22,11 @@ homework.
 
 ## Why the plan changed
 
-Registration-free COM activates MediaObj from both the private build directory
-and beside `PDR.exe`. SIMBA construction faults with `0xC0000005` in both
-locations. Source playback through MediaObj is the smallest real playback
-feature with an independently verified activation path.
+Registration-free COM activates MediaObj from the private build directory.
+The MO-only source probe opens the supplied MP3 sample and reads its metadata.
+JPEG and MP4 source loading are explicit dependency-discovery gaps, not
+claimed playback support. Source playback through MediaObj is the smallest
+real playback feature with an independently verified activation path.
 
 ## Delivery sequence
 

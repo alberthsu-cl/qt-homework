@@ -29,8 +29,10 @@ rules and evidence must also be complete.
 | [HOMEWORK_2_PLAN.md](HOMEWORK_2_PLAN.md) | Scope and delivery sequence |
 | [MILESTONES.md](MILESTONES.md) | Homework-2 goal, boundaries, and exit criteria |
 | [ISSUE_GRAPH.md](ISSUE_GRAPH.md) | Active H2 ticket catalog and dependency graph |
-| [VERIFICATION.md](VERIFICATION.md) | MediaObj source-player verification rules |
-| [adr/README.md](adr/README.md) | Architecture decision status and review rules |
+| [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | Current ownership, UI, and engine boundary |
+| [RUNTIME.md](RUNTIME.md) | MO-only staging contract and probe evidence |
+| [VERIFICATION.md](VERIFICATION.md) | MediaObj source-player verification rules and current baseline |
+| [outdate/README.md](outdate/README.md) | Superseded SIMBA/timeline investigation records |
 
 ## Immediate execution order
 

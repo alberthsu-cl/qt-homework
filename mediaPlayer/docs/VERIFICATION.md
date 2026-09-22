@@ -24,6 +24,19 @@
 | Close during load or play | Process exits within five seconds. |
 | Runtime missing | QML shell stays usable and reports that playback is unavailable. |
 
+## Current baseline
+
+| Probe | Result | Evidence |
+|---|---|---|
+| MO-only activation | Pass | Registration-free MediaObj activation and `IMEDIAOBJ8` query pass without `runtime\\simba`. |
+| `Mahoroba.mp3` source open | Pass | `LoadClip` returns `S_OK`; type is audio and duration is available. |
+| `Food.jpg` source open | Gap | `LoadClip` returns `E_FAIL`; image dependencies are unknown. |
+| `Mountainbiker.mp4` source open | Gap | `LoadClip` returns `0x80040266`; video decode/filter dependencies are unknown. |
+
+The valid-video and valid-image rows above remain future acceptance criteria.
+They must not be reported as passed until the MO-only package opens the sample
+formats and the selected preview route has been verified.
+
 ## Evidence record
 
 ```text
