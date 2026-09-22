@@ -5,6 +5,8 @@ Rectangle
 {
     id: root
     property string mediaName: ""
+    property string mediaKind: "Unknown"
+    property string mediaPath: ""
     color: "#20242c"
     clip: true
 
@@ -56,6 +58,8 @@ Rectangle
 
         Label { text: "Asset information"; color: "#dce2eb"; font.pixelSize: 13; font.bold: true }
         Label { width: parent.width; text: root.enabled ? "Name: " + root.mediaName : "Import an asset to view information."; color: "#9aa6b5"; wrapMode: Text.Wrap }
-        Label { width: parent.width; text: "Type, duration, dimensions, frame rate, and streams appear after MediaObj loads the asset."; color: "#7f8996"; wrapMode: Text.Wrap }
+        Label { width: parent.width; text: root.enabled ? "Type: " + root.mediaKind : ""; color: "#9aa6b5"; visible: root.enabled }
+        Label { width: parent.width; text: root.enabled ? "Path: " + root.mediaPath : ""; color: "#7f8996"; elide: Text.ElideMiddle; visible: root.enabled }
+        Label { width: parent.width; text: "Duration, dimensions, frame rate, and streams appear after MediaObj loads the asset."; color: "#7f8996"; wrapMode: Text.Wrap }
     }
 }

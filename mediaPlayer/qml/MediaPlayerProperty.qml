@@ -5,7 +5,10 @@ import QtKit
 UIProperty
 {
     property UIProperty binding
+    property string mediaId: ""
+    property string mediaPath: ""
     property string mediaName: ""
+    property string mediaKind: "Unknown"
     property bool hasMedia: false
     property bool playing: false
 

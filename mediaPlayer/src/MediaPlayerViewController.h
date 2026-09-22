@@ -16,7 +16,9 @@ public:
     bool Present();
     void Dismiss();
     void SetViewportSize(int width, int height);
-    void PushMedia(const std::string& mediaUrl, const std::string& mediaName);
+    void PushMedia(const std::string& mediaPath,
+                   const std::string& mediaUrl,
+                   const std::string& mediaName);
 
 private:
     void OnQtReady();

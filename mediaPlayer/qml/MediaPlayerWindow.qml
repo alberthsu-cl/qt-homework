@@ -103,6 +103,7 @@ Window
             width: 260
             hasMedia: MediaPlayerProperty.hasMedia
             mediaName: MediaPlayerProperty.mediaName
+            mediaKind: MediaPlayerProperty.mediaKind
             mediaSource: previewBridge.source
             onImportRequested: if (importBridge.binding) importBridge.binding.clicked()
         }
@@ -116,6 +117,8 @@ Window
             width: 250
             enabled: MediaPlayerProperty.hasMedia
             mediaName: MediaPlayerProperty.mediaName
+            mediaKind: MediaPlayerProperty.mediaKind
+            mediaPath: MediaPlayerProperty.mediaPath
         }
 
         Preview.PreviewPanel

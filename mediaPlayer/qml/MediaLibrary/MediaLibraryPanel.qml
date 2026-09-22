@@ -6,6 +6,7 @@ Rectangle
     id: root
     property bool hasMedia: false
     property string mediaName: ""
+    property string mediaKind: "Unknown"
     property string mediaSource: ""
     signal importRequested()
     color: "#20242c"
@@ -52,6 +53,7 @@ Rectangle
                 width: parent.width
                 visible: root.hasMedia
                 title: root.mediaName
+                mediaKind: root.mediaKind
                 source: root.mediaSource
                 selected: true
             }

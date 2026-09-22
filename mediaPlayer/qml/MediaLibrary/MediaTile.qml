@@ -5,6 +5,7 @@ Rectangle
 {
     id: root
     property string title: ""
+    property string mediaKind: "Unknown"
     property string source: ""
     property bool selected: false
     signal activated()
@@ -56,6 +57,18 @@ Rectangle
         color: "#eef2f7"
         elide: Text.ElideMiddle
         font.pixelSize: 12
+    }
+
+    Label
+    {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.leftMargin: 10
+        anchors.topMargin: 10
+        text: root.mediaKind.toUpperCase()
+        color: "#b7c3d2"
+        font.pixelSize: 10
+        font.bold: true
     }
 
     MouseArea

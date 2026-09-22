@@ -134,6 +134,7 @@ void CMediaPlayerViewController::SetViewportSize(int width, int height)
 }
 
 void CMediaPlayerViewController::PushMedia(
+    const std::string& mediaPath,
     const std::string& mediaUrl,
     const std::string& mediaName)
 {
@@ -141,13 +142,13 @@ void CMediaPlayerViewController::PushMedia(
     if (!m_ready || !context)
         return;
 
-    context->runOnQtThread([this, context, mediaUrl, mediaName]() {
-        m_controller->SetImportedMedia(mediaName);
+    m_controller->SetImportedMedia(mediaPath, mediaUrl, mediaName);
+    context->runOnQtThread([context, mediaUrl, mediaName]() {
         if (context->isObjectBound(MediaPlayerName.previewImage))
             context->image(MediaPlayerName.previewImage).source(mediaUrl.c_str());
         if (context->isObjectBound(MediaPlayerName.statusLabel))
         {
-            const std::string message = "Imported " + mediaName + " - add it to the timeline";
+            const std::string message = "Imported " + mediaName + " - source playback is pending verification";
             context->label(MediaPlayerName.statusLabel).text(message.c_str());
         }
     });

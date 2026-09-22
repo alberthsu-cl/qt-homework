@@ -127,7 +127,7 @@ void CMainFrame::ImportMedia(const CString& path)
     if (slash >= 0)
         name = name.Mid(slash + 1);
 
-    m_viewController->PushMedia(ToUtf8(url), ToUtf8(name));
+    m_viewController->PushMedia(ToUtf8(path), ToUtf8(url), ToUtf8(name));
     SetWindowText(_T("Media Player - ") + name);
     m_status.SetWindowText(_T("  Imported ") + name);
 }
