@@ -60,6 +60,14 @@ Rectangle
         Label { width: parent.width; text: root.enabled ? "Name: " + root.mediaName : "Import an asset to view information."; color: "#9aa6b5"; wrapMode: Text.Wrap }
         Label { width: parent.width; text: root.enabled ? "Type: " + root.mediaKind : ""; color: "#9aa6b5"; visible: root.enabled }
         Label { width: parent.width; text: root.enabled ? "Path: " + root.mediaPath : ""; color: "#7f8996"; elide: Text.ElideMiddle; visible: root.enabled }
-        Label { width: parent.width; text: "Duration, dimensions, frame rate, and streams appear after MediaObj loads the asset."; color: "#7f8996"; wrapMode: Text.Wrap }
+        Label
+        {
+            width: parent.width
+            text: root.mediaKind === "Image"
+                ? "Still images use the direct QML preview and have no playback transport."
+                : "Duration, dimensions, frame rate, and streams appear after MediaObj loads the asset."
+            color: "#7f8996"
+            wrapMode: Text.Wrap
+        }
     }
 }

@@ -8,6 +8,7 @@ Rectangle
     property string mediaName: ""
     property string mediaSource: ""
     property bool playing: false
+    property bool canPlay: false
     signal playRequested()
     signal stopRequested()
 
@@ -86,7 +87,7 @@ Rectangle
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        canPlay: root.hasMedia
+        canPlay: root.canPlay
         playing: root.playing
         onPlayRequested: root.playRequested()
         onStopRequested: root.stopRequested()

@@ -14,6 +14,7 @@ void CMediaPlayerController::SetImportedMedia(const std::string& filePath,
                                               const std::string& sourceUrl,
                                               const std::string& displayName)
 {
+    SelectedMedia selectedAsset;
     {
         std::lock_guard<std::mutex> guard(m_mediaMutex);
         SelectedMedia asset;
@@ -36,22 +37,25 @@ void CMediaPlayerController::SetImportedMedia(const std::string& filePath,
             m_selectedIndex = static_cast<size_t>(std::distance(m_catalog.begin(), existing));
         }
         m_selectedMedia = m_catalog[m_selectedIndex];
+        selectedAsset = m_selectedMedia;
     }
     m_hasMedia = true;
     m_isPlaying = false;
-    LoadSelectedSource(filePath);
+    LoadSelectedSource(selectedAsset);
     PublishState();
 }
 
 bool CMediaPlayerController::SelectMedia(size_t catalogIndex)
 {
     bool selected = false;
+    SelectedMedia selectedAsset;
     {
         std::lock_guard<std::mutex> guard(m_mediaMutex);
         if (catalogIndex < m_catalog.size())
         {
             m_selectedIndex = catalogIndex;
             m_selectedMedia = m_catalog[m_selectedIndex];
+            selectedAsset = m_selectedMedia;
             selected = true;
         }
     }
@@ -59,7 +63,7 @@ bool CMediaPlayerController::SelectMedia(size_t catalogIndex)
     if (selected)
     {
         m_isPlaying = false;
-        LoadSelectedSource(SelectedAsset().filePath);
+        LoadSelectedSource(selectedAsset);
         PublishState();
     }
     return selected;
@@ -67,7 +71,9 @@ bool CMediaPlayerController::SelectMedia(size_t catalogIndex)
 
 void CMediaPlayerController::TogglePlay()
 {
-    if (m_hasMedia)
+    const SelectedMedia asset = SelectedAsset();
+    const SourceMediaInfo sourceInfo = SelectedSourceInfo();
+    if (m_hasMedia && asset.kind != MediaKind::Image && sourceInfo.loaded)
         m_isPlaying = !m_isPlaying.load();
     PublishState();
 }
@@ -187,9 +193,20 @@ std::string CMediaPlayerController::CreateCatalogJson(const std::vector<Selected
     return stream.str();
 }
 
-void CMediaPlayerController::LoadSelectedSource(const std::string& filePath)
+void CMediaPlayerController::LoadSelectedSource(const SelectedMedia& asset)
 {
-    const SourceMediaInfo sourceInfo = m_sourceAdapter.Load(filePath);
+    SourceMediaInfo sourceInfo;
+    if (asset.kind == MediaKind::Image)
+    {
+        m_sourceAdapter.Unload();
+        sourceInfo.loaded = true;
+        sourceInfo.statusText = "Image source ready for QML preview.";
+    }
+    else
+    {
+        sourceInfo = m_sourceAdapter.Load(asset.filePath);
+    }
+
     std::lock_guard<std::mutex> guard(m_mediaMutex);
     m_selectedSourceInfo = sourceInfo;
 }

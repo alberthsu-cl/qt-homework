@@ -138,6 +138,9 @@ Window
             mediaName: MediaPlayerProperty.mediaName
             mediaSource: previewBridge.source
             playing: MediaPlayerProperty.playing
+            canPlay: MediaPlayerProperty.hasMedia &&
+                     MediaPlayerProperty.mediaKind !== "Image" &&
+                     MediaPlayerProperty.mediaObjLoaded
             onPlayRequested: if (playBridge.binding) playBridge.binding.clicked()
             onStopRequested: if (stopBridge.binding) stopBridge.binding.clicked()
         }

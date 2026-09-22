@@ -50,7 +50,7 @@ private:
     static std::string CreateStableMediaId(const std::string& filePath);
     static const char* MediaKindText(MediaKind kind);
     static std::string CreateCatalogJson(const std::vector<SelectedMedia>& catalog);
-    void LoadSelectedSource(const std::string& filePath);
+    void LoadSelectedSource(const SelectedMedia& asset);
 
     std::atomic<bool> m_hasMedia{ false };
     std::atomic<bool> m_isPlaying{ false };

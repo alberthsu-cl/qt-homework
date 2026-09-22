@@ -129,9 +129,11 @@ void CMediaPlayerViewController::UpdateSelectedMediaPreview(IQmlContext* context
         context->image(MediaPlayerName.previewImage).source(asset.sourceUrl.c_str());
     if (context->isObjectBound(MediaPlayerName.statusLabel))
     {
-        const std::string message = sourceInfo.loaded
-            ? "MediaObj loaded " + asset.displayName + " - preview playback is pending"
-            : sourceInfo.statusText;
+        std::string message = sourceInfo.statusText;
+        if (sourceInfo.loaded && asset.kind == MediaKind::Image)
+            message = "Image ready: " + asset.displayName + " - direct QML preview";
+        else if (sourceInfo.loaded)
+            message = "MediaObj loaded " + asset.displayName + " - preview playback is pending";
         context->label(MediaPlayerName.statusLabel).text(message.c_str());
     }
 }
