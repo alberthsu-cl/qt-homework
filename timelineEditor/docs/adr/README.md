@@ -25,7 +25,38 @@ Carried from the `Unknown` labels above; each is owned by a ticket.
 
 | Question | ADR | Owner ticket |
 |---|---|---|
-| Does an interactive session need different engine settings than the headless test path (`SetSuppressEditMode`)? | 0001, 0002 | H3-02 |
-| Does a `CQtModelessController` present correctly from a command-line host with no main panel behind it? | 0003 | H3-01 |
-| Do the preview canvas and the QML window cooperate in one frame? | 0003 | H3-06 |
+| Does a `CQtModelessController` present correctly from a command-line host with no main panel behind it? | 0003 | H3-01 (still open; H3-01 shipped the window and pump, not a QML surface) |
 | Do the four editing commands map onto `ITimeline` without extending it? | 0002 | H3-05 |
+
+## Answered
+
+**Does an interactive session need different engine settings than the headless
+test path?** (ADR-0001/0002, answered in H3-02.) Yes. The product splits the
+two postures cleanly:
+
+| Posture | Callers | Setting |
+|---|---|---|
+| Preview-only | `CMcpHostWindow`, `EngineTestHostWindow`, `CICDProcedure` | `SetSuppressEditMode(true)` |
+| Interactive editing | launcher, main panel, `CBatchHostWindow`, `StatusCenter` | `SetSuppressEditMode(false)` + `RestoreEditMode()` |
+
+Homework-3 edits, so it takes the second. This matters more than a flag name
+suggests: with edit mode suppressed, `RestoreEditMode()` is ignored outright,
+and the timeline writes H3-05 depends on would not take effect. Copying
+`EngineTestHostWindow` verbatim -- which the H3-02 plan text originally said to
+do -- would have produced a timeline that silently accepted every edit and
+applied none.
+
+**How does a QML preview receive frames?** (ADR-0003, asked of H3-06, answered
+early while researching the above.) Through `EnterRenderlessMode(callback)`.
+The launcher and batch pass `nullptr` for a genuinely headless session, but
+`AutoEditPreviewController` and `AIEffectMaskController` pass a Qt view
+controller and receive `ID3D11Texture2D` frames. So the preview route is an
+argument change at an existing call site, not a different engine mode. H3-02
+passes `nullptr`; H3-06 replaces it.
+
+This narrows but does not close the remaining H3-06 question, which was really
+about window composition rather than frame delivery:
+
+| Question | ADR | Owner ticket |
+|---|---|---|
+| Do the preview surface and the QML window cooperate in one frame? | 0003 | H3-06 |
