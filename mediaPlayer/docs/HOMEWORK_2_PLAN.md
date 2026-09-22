@@ -23,10 +23,11 @@ homework.
 ## Why the plan changed
 
 Registration-free COM activates MediaObj from the private build directory.
-The MO-only source probe opens the supplied MP3 sample and reads its metadata.
-JPEG and MP4 source loading are explicit dependency-discovery gaps, not
-claimed playback support. Source playback through MediaObj is the smallest
-real playback feature with an independently verified activation path.
+The source probe opens the supplied MP3 and H.264 MP4 samples and reads their
+metadata using the explicitly staged MediaObj, MP4 splitter, and video decoder
+files. Images use the direct QML image path. Source playback through MediaObj
+is the smallest real playback feature with an independently verified
+activation path and no SIMBA dependency.
 
 ## Delivery sequence
 

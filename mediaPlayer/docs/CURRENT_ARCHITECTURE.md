@@ -4,7 +4,7 @@
 
 Homework-2 is a single-source MediaObj player. It imports one file, publishes
 selected-asset state to QML, and will provide source preview and transport only
-for formats that pass the MO-only runtime verification.
+for formats that pass the MediaObj source-runtime verification.
 
 Timeline composition, editing, effects, persistence, and SIMBA are outside
 this project.
@@ -33,6 +33,7 @@ MediaObj pointer.
 
 ## Current implementation state
 
-The QtKit/QML shell, MO-only runtime staging, and command-line MediaObj probes
-exist. The next implementation item is the H2-02 source adapter; a passing
-probe is runtime evidence, not yet application playback integration.
+The QtKit/QML shell, media catalog, MediaObj source adapter, runtime staging,
+and command-line source probes exist. The next implementation item is the
+H2-03 native preview surface; a passing source probe is graph and metadata
+evidence, not yet application playback integration.

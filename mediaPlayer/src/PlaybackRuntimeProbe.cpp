@@ -19,11 +19,21 @@ const GUID kClsidMediaObj =
 { 0x302147f3, 0x0a17, 0x4fff, { 0x89, 0x78, 0xf8, 0xb7, 0xa6, 0x4f, 0xcd, 0xa7 } };
 const GUID kIidMediaObj8 =
 { 0x201f0102, 0x23bd, 0x4ddd, { 0xa0, 0x44, 0xb0, 0x2b, 0x71, 0x0a, 0xc2, 0x79 } };
+const GUID kIidMediaObj13 =
+{ 0x35eb2c0c, 0x373f, 0x4abb, { 0xaa, 0xe1, 0x62, 0x25, 0xcb, 0x35, 0x8e, 0xcc } };
+const GUID kIidClRegPath =
+{ 0xebb44941, 0xac60, 0x49ad, { 0xac, 0xa5, 0xa5, 0x49, 0x47, 0x5c, 0xf1, 0x85 } };
+const GUID kIidMediaObjInfo =
+{ 0x5137324d, 0x53c4, 0x4e2a, { 0xa8, 0x7f, 0x44, 0xc9, 0x61, 0x0a, 0x04, 0x55 } };
 
 const DWORD kMediaInfoTypeMediaType = 0x0000;
 const DWORD kMediaInfoTypeWidth = 0x0004;
 const DWORD kMediaInfoTypeHeight = 0x0005;
 const DWORD kMediaInfoTypeDuration = 0x0007;
+const DWORD kMediaObjModeVideoRenderer = 5;
+const DWORD kMediaObjModeGraph = 23;
+const int kMediaObjRendererNull = 3;
+const int kMediaObjGraphSnapshot = 1;
 const UINT kMediaTypeAudio = 0x03;
 
 // The first IMEDIAOBJ8 methods, copied verbatim in ABI order. We need only
@@ -39,6 +49,56 @@ struct IMediaObj8Probe : IUnknown
     virtual void STDMETHODCALLTYPE Unload() = 0;
     virtual HRESULT STDMETHODCALLTYPE GetMediaInfo(DWORD type, LPVOID value) = 0;
 };
+
+struct IClRegPathProbe : IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE SetRegPath(HKEY* root, LPSTR path,
+                                                 int pathLength, int subFolderType) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetRegPathW(HKEY* root, LPWSTR path,
+                                                  int pathLength, int subFolderType) = 0;
+};
+
+struct IMediaObjInfoProbe : IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE GetModeInfo(DWORD mode, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetModeInfo(DWORD mode, LPVOID value) = 0;
+};
+
+std::wstring FormatHResult(HRESULT hr);
+
+void ApplyPdrRegistryPath(IUnknown* mediaObj)
+{
+    IClRegPathProbe* regPath = nullptr;
+    if (FAILED(mediaObj->QueryInterface(kIidClRegPath,
+        reinterpret_cast<void**>(&regPath))) || !regPath)
+        return;
+
+    HKEY root = HKEY_LOCAL_MACHINE;
+    wchar_t path[] = L"Software\\CyberLink\\PowerDirector25";
+    regPath->SetRegPathW(&root, path, static_cast<int>(std::size(path) - 1), 1);
+    regPath->Release();
+}
+
+HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
+{
+    IMediaObjInfoProbe* mediaInfo = nullptr;
+    const HRESULT queryResult = mediaObj->QueryInterface(kIidMediaObjInfo,
+        reinterpret_cast<void**>(&mediaInfo));
+    if (FAILED(queryResult) || !mediaInfo)
+        return queryResult;
+
+    int graphMode = kMediaObjGraphSnapshot;
+    const HRESULT graphResult = mediaInfo->SetModeInfo(kMediaObjModeGraph, &graphMode);
+    int renderer = kMediaObjRendererNull;
+    const HRESULT rendererResult = SUCCEEDED(graphResult)
+        ? mediaInfo->SetModeInfo(kMediaObjModeVideoRenderer, &renderer)
+        : graphResult;
+    mediaInfo->Release();
+
+    QtKitHost::Log("[M0-02] source graph setup: snapshot=%ls, null-renderer=%ls",
+        FormatHResult(graphResult).c_str(), FormatHResult(rendererResult).c_str());
+    return rendererResult;
+}
 
 struct FileProbe
 {
@@ -148,7 +208,11 @@ FileProbe ProbeFile(const std::wstring& executableDirectory,
     }
 
     result.present = true;
-    if (result.path.size() >= 4 && result.path.substr(result.path.size() - 4) == L".dll")
+    const bool isDll = result.path.size() >= 4 &&
+        result.path.substr(result.path.size() - 4) == L".dll";
+    const bool isAx = result.path.size() >= 3 &&
+        result.path.substr(result.path.size() - 3) == L".ax";
+    if (isDll || isAx)
     {
         result.hasArchitecture = true;
         result.is64Bit = Is64BitPortableExecutable(result.path, result.error);
@@ -240,18 +304,33 @@ bool ProbeMediaObjActivation(bool& comInitialized)
 PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::Run(const std::wstring& executableDirectory)
 {
     PlaybackRuntimeProbeResult result;
-    QtKitHost::Log("[M0-01] ==== MO-only runtime activation probe ====");
+    QtKitHost::Log("[M0-01] ==== MediaObj source runtime activation probe ====");
 
     const FileProbe mediaObj = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObj.dll", L"MediaObj.dll");
     const FileProbe mediaObjExt = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObjExt.dll", L"MediaObjExt.dll");
     const FileProbe mediaObjIni = ProbeFile(executableDirectory, L"runtime\\mediacache\\MediaObj.ini", L"MediaObj.ini");
+    const FileProbe mp4Splitter = ProbeFile(executableDirectory,
+        L"runtime\\decoderPack\\CLM4Splt.ax", L"CLM4Splt.ax");
+    const FileProbe videoDecoder = ProbeFile(executableDirectory,
+        L"runtime\\decoderPack\\CLCVD\\clcvd.ax", L"clcvd.ax");
+    const FileProbe h264Decoder = ProbeFile(executableDirectory,
+        L"runtime\\decoderPack\\CLCVD\\264dsse2.dll", L"264dsse2.dll");
+    const FileProbe decoderThreads = ProbeFile(executableDirectory,
+        L"runtime\\decoderPack\\CLCVD\\pthreadVC2.dll", L"pthreadVC2.dll");
+    const FileProbe decoderShell = ProbeFile(executableDirectory,
+        L"runtime\\decoderPack\\CLCVD\\vdshell.dll", L"vdshell.dll");
 
     result.runtimeFilesPresent = mediaObj.present && mediaObj.is64Bit &&
-        mediaObjExt.present && mediaObjExt.is64Bit && mediaObjIni.present;
+        mediaObjExt.present && mediaObjExt.is64Bit && mediaObjIni.present &&
+        mp4Splitter.present && mp4Splitter.is64Bit &&
+        videoDecoder.present && videoDecoder.is64Bit &&
+        h264Decoder.present && h264Decoder.is64Bit &&
+        decoderThreads.present && decoderThreads.is64Bit &&
+        decoderShell.present && decoderShell.is64Bit;
     if (!result.runtimeFilesPresent)
     {
-        result.statusText = L"MO-only runtime unavailable - staged files are missing or not x64. See MediaPlayer.log.";
-        QtKitHost::Log("[M0-01] RESULT: MO-only staged runtime incomplete");
+        result.statusText = L"MediaObj source runtime unavailable - staged files are missing or not x64. See MediaPlayer.log.";
+        QtKitHost::Log("[M0-01] RESULT: MediaObj source runtime incomplete");
         return result;
     }
 
@@ -260,8 +339,8 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::Run(const std::wstring& execut
     result.comInitialized = mediaObjComInitialized;
 
     result.statusText = result.IsReady()
-        ? L"MO-only runtime ready - activation probe passed."
-        : L"MO-only runtime unavailable - activation details are in MediaPlayer.log.";
+        ? L"MediaObj source runtime ready - activation probe passed."
+        : L"MediaObj source runtime unavailable - activation details are in MediaPlayer.log.";
     QtKitHost::Log("[M0-01] RESULT: %s", result.IsReady() ? "pass" : "FAILED");
     return result;
 }
@@ -277,7 +356,7 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
     if (sourcePath.empty() || ::GetFileAttributesW(sourcePath.c_str()) == INVALID_FILE_ATTRIBUTES)
     {
         QtKitHost::Log("[M0-02] source missing: %ls", sourcePath.c_str());
-        result.statusText = L"MO-only source probe failed: source file is missing.";
+        result.statusText = L"MediaObj source probe failed: source file is missing.";
         return result;
     }
 
@@ -285,19 +364,32 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
     if (FAILED(comResult))
     {
         QtKitHost::Log("[M0-02] CoInitializeEx failed: %ls", FormatHResult(comResult).c_str());
-        result.statusText = L"MO-only source probe failed: COM initialization failed.";
+        result.statusText = L"MediaObj source probe failed: COM initialization failed.";
         return result;
     }
 
     IMediaObj8Probe* mediaObj = nullptr;
     const HRESULT createResult = ::CoCreateInstance(
-        kClsidMediaObj, nullptr, CLSCTX_INPROC_SERVER, kIidMediaObj8,
+        kClsidMediaObj, nullptr, CLSCTX_INPROC_SERVER, kIidMediaObj13,
         reinterpret_cast<void**>(&mediaObj));
     if (FAILED(createResult) || !mediaObj)
     {
         QtKitHost::Log("[M0-02] MediaObj creation failed: %ls", FormatHResult(createResult).c_str());
         ::CoUninitialize();
-        result.statusText = L"MO-only source probe failed: MediaObj creation failed.";
+        result.statusText = L"MediaObj source probe failed: MediaObj creation failed.";
+        return result;
+    }
+
+    ApplyPdrRegistryPath(mediaObj);
+
+    const HRESULT configureResult = ConfigureSourceOnlyGraph(mediaObj);
+    if (FAILED(configureResult))
+    {
+        QtKitHost::Log("[M0-02] source graph setup failed: %ls",
+            FormatHResult(configureResult).c_str());
+        mediaObj->Release();
+        ::CoUninitialize();
+        result.statusText = L"MediaObj source probe failed: source graph setup failed.";
         return result;
     }
 
@@ -329,8 +421,8 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
     mediaObj->Release();
     ::CoUninitialize();
     result.statusText = result.sourceOpened
-        ? L"MO-only source probe passed."
-        : L"MO-only source probe failed. See MediaPlayer.log.";
+        ? L"MediaObj source probe passed."
+        : L"MediaObj source probe failed. See MediaPlayer.log.";
     QtKitHost::Log("[M0-02] RESULT: %s", result.sourceOpened ? "pass" : "FAILED");
     return result;
 }

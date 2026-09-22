@@ -28,14 +28,14 @@
 
 | Probe | Result | Evidence |
 |---|---|---|
-| MO-only activation | Pass | Registration-free MediaObj activation and `IMEDIAOBJ8` query pass without `runtime\\simba`. |
+| MediaObj source activation | Pass | Registration-free MediaObj activation and interface query pass without `runtime\\simba`. |
 | `Mahoroba.mp3` source open | Pass | `LoadClip` returns `S_OK`; type is audio and duration is available. |
-| `Food.jpg` source open | Gap | `LoadClip` returns `E_FAIL`; image dependencies are unknown. |
-| `Mountainbiker.mp4` source open | Gap | `LoadClip` returns `0x80040266`; video decode/filter dependencies are unknown. |
+| `Food.jpg` image open | Pass by QML route | Image preview bypasses MediaObj playback. |
+| `Mountainbiker.mp4` source open | Pass | `LoadClip` returns `S_OK` with the staged MP4 splitter and H.264 decoder. |
+| `Skateboard 01.mp4` source open | Pass | `LoadClip` returns `S_OK` with the same minimal runtime. |
 
-The valid-video and valid-image rows above remain future acceptance criteria.
-They must not be reported as passed until the MO-only package opens the sample
-formats and the selected preview route has been verified.
+Native video preview and transport remain future acceptance criteria. A passing
+source-open probe verifies graph construction and metadata only.
 
 ## Evidence record
 

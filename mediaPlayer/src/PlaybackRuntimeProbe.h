@@ -19,7 +19,7 @@ struct PlaybackRuntimeProbeResult
 class CPlaybackRuntimeProbe
 {
 public:
-    // Runs on the MFC main thread. It verifies the MO-only package and proves
+    // Runs on the MFC main thread. It verifies the MediaObj source package and proves
     // registration-free COM activation without retaining an engine interface.
     static PlaybackRuntimeProbeResult Run(const std::wstring& executableDirectory);
 

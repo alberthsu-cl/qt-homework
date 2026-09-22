@@ -4,7 +4,7 @@
 
 Deliver a small MFC + QtKit/QML source-media player. A user imports one asset,
 sees its information, and controls MediaObj source playback after its source
-format has passed the MO-only runtime verification.
+format has passed the MediaObj source-runtime verification.
 
 ## In scope
 

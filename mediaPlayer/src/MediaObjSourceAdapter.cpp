@@ -11,13 +11,21 @@ namespace {
 
 const GUID kClsidMediaObj =
 { 0x302147f3, 0x0a17, 0x4fff, { 0x89, 0x78, 0xf8, 0xb7, 0xa6, 0x4f, 0xcd, 0xa7 } };
-const GUID kIidMediaObj8 =
-{ 0x201f0102, 0x23bd, 0x4ddd, { 0xa0, 0x44, 0xb0, 0x2b, 0x71, 0x0a, 0xc2, 0x79 } };
+const GUID kIidMediaObj13 =
+{ 0x35eb2c0c, 0x373f, 0x4abb, { 0xaa, 0xe1, 0x62, 0x25, 0xcb, 0x35, 0x8e, 0xcc } };
+const GUID kIidClRegPath =
+{ 0xebb44941, 0xac60, 0x49ad, { 0xac, 0xa5, 0xa5, 0x49, 0x47, 0x5c, 0xf1, 0x85 } };
+const GUID kIidMediaObjInfo =
+{ 0x5137324d, 0x53c4, 0x4e2a, { 0xa8, 0x7f, 0x44, 0xc9, 0x61, 0x0a, 0x04, 0x55 } };
 
 const DWORD kMediaInfoTypeMediaType = 0x0000;
 const DWORD kMediaInfoTypeWidth = 0x0004;
 const DWORD kMediaInfoTypeHeight = 0x0005;
 const DWORD kMediaInfoTypeDuration = 0x0007;
+const DWORD kMediaObjModeVideoRenderer = 5;
+const DWORD kMediaObjModeGraph = 23;
+const int kMediaObjRendererNull = 3;
+const int kMediaObjGraphSnapshot = 1;
 
 // Keep this prefix in exact ABI order with the PDR IMEDIAOBJ8 declaration.
 // H2-02 needs only source loading and basic metadata; transport is H2-04.
@@ -32,6 +40,52 @@ struct IMediaObj8Source : IUnknown
     virtual void STDMETHODCALLTYPE Unload() = 0;
     virtual HRESULT STDMETHODCALLTYPE GetMediaInfo(DWORD type, LPVOID value) = 0;
 };
+
+struct IClRegPathSource : IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE SetRegPath(HKEY* root, LPSTR path,
+                                                 int pathLength, int subFolderType) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetRegPathW(HKEY* root, LPWSTR path,
+                                                  int pathLength, int subFolderType) = 0;
+};
+
+struct IMediaObjInfoSource : IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE GetModeInfo(DWORD mode, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetModeInfo(DWORD mode, LPVOID value) = 0;
+};
+
+void ApplyPdrRegistryPath(IUnknown* mediaObj)
+{
+    IClRegPathSource* regPath = nullptr;
+    if (FAILED(mediaObj->QueryInterface(kIidClRegPath,
+        reinterpret_cast<void**>(&regPath))) || !regPath)
+        return;
+
+    HKEY root = HKEY_LOCAL_MACHINE;
+    wchar_t path[] = L"Software\\CyberLink\\PowerDirector25";
+    regPath->SetRegPathW(&root, path, static_cast<int>(std::size(path) - 1), 1);
+    regPath->Release();
+}
+
+HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
+{
+    IMediaObjInfoSource* mediaInfo = nullptr;
+    const HRESULT queryResult = mediaObj->QueryInterface(kIidMediaObjInfo,
+        reinterpret_cast<void**>(&mediaInfo));
+    if (FAILED(queryResult) || !mediaInfo)
+        return queryResult;
+
+    int graphMode = kMediaObjGraphSnapshot;
+    HRESULT result = mediaInfo->SetModeInfo(kMediaObjModeGraph, &graphMode);
+    if (SUCCEEDED(result))
+    {
+        int renderer = kMediaObjRendererNull;
+        result = mediaInfo->SetModeInfo(kMediaObjModeVideoRenderer, &renderer);
+    }
+    mediaInfo->Release();
+    return result;
+}
 
 } // namespace
 
@@ -68,6 +122,14 @@ SourceMediaInfo CMediaObjSourceAdapter::Load(const std::string& utf8Path)
     std::vector<wchar_t> mutablePath(path.begin(), path.end());
     mutablePath.push_back(L'\0');
     IMediaObj8Source* mediaObj = static_cast<IMediaObj8Source*>(m_mediaObj);
+    const HRESULT configureResult = ConfigureSourceOnlyGraph(mediaObj);
+    if (FAILED(configureResult))
+    {
+        m_info.errorCode = configureResult;
+        m_info.statusText = "MediaObj source graph setup failed: " + FormatHResult(configureResult);
+        return m_info;
+    }
+
     const HRESULT loadResult = mediaObj->LoadClip(mutablePath.data(), 0, 0, FALSE);
     if (FAILED(loadResult))
     {
@@ -127,7 +189,7 @@ bool CMediaObjSourceAdapter::EnsureMediaObj()
 
     IMediaObj8Source* mediaObj = nullptr;
     const HRESULT createResult = ::CoCreateInstance(kClsidMediaObj, nullptr,
-        CLSCTX_INPROC_SERVER, kIidMediaObj8, reinterpret_cast<void**>(&mediaObj));
+        CLSCTX_INPROC_SERVER, kIidMediaObj13, reinterpret_cast<void**>(&mediaObj));
     if (FAILED(createResult) || !mediaObj)
     {
         m_info.errorCode = createResult;
@@ -135,6 +197,7 @@ bool CMediaObjSourceAdapter::EnsureMediaObj()
         return false;
     }
 
+    ApplyPdrRegistryPath(mediaObj);
     m_mediaObj = mediaObj;
     return true;
 }

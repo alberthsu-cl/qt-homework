@@ -38,4 +38,10 @@
     <comClass clsid="{F7E57367-721B-40BD-B4A1-9F5D9FD8C3A7}" threadingModel="Both" />
     <comClass clsid="{A9E2C4F5-8D7B-4A3E-B2C1-5F8E9A7D6C3B}" threadingModel="Both" />
   </file>
+  <file name="runtime\decoderPack\CLM4Splt.ax">
+    <comClass clsid="{A05CDF6C-287E-47A1-A407-A477A8A5FDCA}" threadingModel="Both" />
+  </file>
+  <file name="runtime\decoderPack\CLCVD\clcvd.ax">
+    <comClass clsid="{8A0836E9-6E48-454D-8F68-507BC13F3D0B}" threadingModel="Both" />
+  </file>
 </assembly>

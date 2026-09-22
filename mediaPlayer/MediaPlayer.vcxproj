@@ -78,7 +78,7 @@
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)..\QtKit\stage_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)stage_mediaobj_runtime.ps1" -Destination "$(ProjectDir)bin_x64" -Quiet</Command>
-      <Message>Staging QtKit and the MO-only source runtime beside MediaPlayer.exe</Message>
+      <Message>Staging QtKit and the MediaObj source runtime beside MediaPlayer.exe</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 

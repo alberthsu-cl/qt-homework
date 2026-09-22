@@ -52,8 +52,9 @@ bin_x64\MediaPlayer.exe
 The post-build event stages two runtimes beside the executable:
 
 1. `..\QtKit\runtime` supplies QtKit and Qt 6 runtime files.
-2. `..\..\external_bin\runtime\mediacache` supplies the MO-only source
-   package through `stage_mediaobj_runtime.ps1`.
+2. `..\..\external_bin\runtime` supplies the MediaObj source package through
+   `stage_mediaobj_runtime.ps1`, including the verified MP4 splitter and H.264
+   decoder files. It does not stage SIMBA.
 
 No Qt headers, import libraries, `moc`, CMake Qt discovery, or installed Qt SDK
 are used. The application includes only the pure virtual QtKit bridge header
@@ -71,8 +72,8 @@ bin_x64\MediaPlayer.exe "C:\media\sample.jpg"
 
 Startup and QML diagnostics are written to `%TEMP%\MediaPlayer.log`.
 The editor does not activate proprietary engines during ordinary startup.
-Run the opt-in activation diagnostic below when reviewing the staged MO-only
-runtime:
+Run the opt-in activation diagnostic below when reviewing the staged MediaObj
+source runtime:
 
 ```powershell
 .\bin_x64\MediaPlayer.exe --probe-playback-runtime
@@ -87,9 +88,9 @@ verified. To probe an actual source without starting the UI:
 .\bin_x64\MediaPlayer.exe --probe-mediaobj "C:\media\sample.mp3"
 ```
 
-The current MO-only bundle opens the supplied MP3 sample and reads its
-metadata. JPEG and MP4 source loading remain a separate dependency-discovery
-step; they are not claimed as portable yet.
+The current bundle opens the supplied MP3 and H.264 MP4 samples and reads their
+metadata. Images continue to use the direct QML image path rather than a
+MediaObj playback graph.
 
 MediaObj uses registration-free COM. `MediaPlayer.manifest` is merged into the
 executable and maps the engine and supporting MO classes to their staged DLL
