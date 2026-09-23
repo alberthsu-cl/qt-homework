@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "PlaybackRuntimeProbe.h"
+#include "MediaObjSourceAdapter.h"
 #include "QtKitHost.h"
 
 #include <objbase.h>
@@ -67,6 +68,21 @@ struct IMediaObjInfoProbe : IUnknown
 };
 
 std::wstring FormatHResult(HRESULT hr);
+
+std::string ToUtf8(const std::wstring& value)
+{
+    if (value.empty())
+        return std::string();
+    const int size = ::WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1,
+                                           nullptr, 0, nullptr, nullptr);
+    if (size <= 1)
+        return std::string();
+    std::string result(static_cast<size_t>(size), '\0');
+    ::WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1,
+                          &result[0], size, nullptr, nullptr);
+    result.pop_back();
+    return result;
+}
 
 void ApplyPdrRegistryPath(IUnknown* mediaObj)
 {
@@ -473,5 +489,52 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
     QtKitHost::Log("[M0-02] RESULT (%s): %s",
         previewEnabled ? "preview" : "source",
         result.sourceOpened ? "pass" : "FAILED");
+    return result;
+}
+
+PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunTransportProbe(
+    const std::wstring& executableDirectory,
+    const std::wstring& sourcePath)
+{
+    PlaybackRuntimeProbeResult result = Run(executableDirectory);
+    if (!result.IsReady())
+        return result;
+
+    HWND previewWindow = ::CreateWindowExW(0, L"STATIC", nullptr,
+        WS_POPUP | SS_BLACKRECT, 0, 0, 640, 360, nullptr, nullptr,
+        ::GetModuleHandleW(nullptr), nullptr);
+    if (!previewWindow)
+    {
+        result.statusText = L"MediaObj transport probe failed: preview window creation failed.";
+        return result;
+    }
+
+    {
+        CMediaObjSourceAdapter adapter;
+        adapter.SetPreviewWindow(previewWindow);
+        const SourceMediaInfo sourceInfo = adapter.Load(ToUtf8(sourcePath));
+        result.sourceOpened = sourceInfo.loaded;
+        if (sourceInfo.loaded)
+        {
+            const bool played = adapter.Play();
+            ::Sleep(250);
+            int64_t position100ns = 0;
+            const bool positioned = adapter.GetCurrentPosition(position100ns);
+            const bool paused = adapter.Pause();
+            const bool stopped = adapter.Stop();
+            result.transportPassed = played && positioned && paused && stopped;
+            QtKitHost::Log(
+                "[H2-04] transport: play=%s, position=%s (%lld), pause=%s, stop=%s",
+                played ? "pass" : "FAILED", positioned ? "pass" : "FAILED",
+                static_cast<long long>(position100ns),
+                paused ? "pass" : "FAILED", stopped ? "pass" : "FAILED");
+        }
+        adapter.SetPreviewWindow(nullptr);
+    }
+
+    ::DestroyWindow(previewWindow);
+    result.statusText = result.transportPassed
+        ? L"MediaObj transport probe passed."
+        : L"MediaObj transport probe failed. See MediaPlayer.log.";
     return result;
 }

@@ -138,14 +138,22 @@ Window
             mediaName: MediaPlayerProperty.mediaName
             mediaKind: MediaPlayerProperty.mediaKind
             mediaSource: previewBridge.source
-            previewHostBindingName: MediaPlayerName.previewHost
-            previewAreaBindingName: MediaPlayerName.previewArea
+            layoutReady: MediaPlayerProperty.previewLayoutReady
             playing: MediaPlayerProperty.playing
+            positionMs: MediaPlayerProperty.positionMs
+            durationMs: MediaPlayerProperty.durationMs
             canPlay: MediaPlayerProperty.hasMedia &&
                      MediaPlayerProperty.mediaKind !== "Image" &&
                      MediaPlayerProperty.mediaObjLoaded
             onPlayRequested: if (playBridge.binding) playBridge.binding.clicked()
             onStopRequested: if (stopBridge.binding) stopBridge.binding.clicked()
+            onPreviewRectReported: (x, y, width, height) => {
+                MediaPlayerProperty.previewX = x
+                MediaPlayerProperty.previewY = y
+                MediaPlayerProperty.previewWidth = width
+                MediaPlayerProperty.previewHeight = height
+                MediaPlayerProperty.previewRevision += 1
+            }
         }
     }
 }

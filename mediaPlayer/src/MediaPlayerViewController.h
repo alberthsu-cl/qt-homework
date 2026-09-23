@@ -11,8 +11,7 @@ class CMediaPlayerViewController
 {
 public:
     CMediaPlayerViewController(CMediaPlayerController* controller,
-                               HWND notifyWindow,
-                               HWND previewWindow);
+                               HWND notifyWindow);
     ~CMediaPlayerViewController();
 
     bool Present();
@@ -28,11 +27,11 @@ private:
     void OnQmlDidLoad();
     void WireButtons(IQmlContext* context);
     void WireSelectionProperty(IQmlContext* context);
+    void WirePreviewGeometry(IQmlContext* context);
     void UpdateSelectedMediaPreview(IQmlContext* context);
 
     CMediaPlayerController* m_controller{ nullptr };
     HWND m_notifyWindow{ nullptr };
-    HWND m_previewWindow{ nullptr };
     std::atomic<HWND> m_qmlWindow{ nullptr };
     std::atomic<bool> m_ready{ false };
     std::atomic<int> m_requestedMediaIndex{ -1 };

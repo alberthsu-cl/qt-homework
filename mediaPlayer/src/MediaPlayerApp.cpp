@@ -23,18 +23,24 @@ public:
 
         if (__argc > 2 && __targv && __targv[1] && __targv[2] &&
             (_wcsicmp(__targv[1], L"--probe-mediaobj") == 0 ||
-             _wcsicmp(__targv[1], L"--probe-mediaobj-preview") == 0))
+             _wcsicmp(__targv[1], L"--probe-mediaobj-preview") == 0 ||
+             _wcsicmp(__targv[1], L"--probe-mediaobj-transport") == 0))
         {
             wchar_t executablePath[MAX_PATH] = { 0 };
             ::GetModuleFileNameW(nullptr, executablePath, MAX_PATH);
             ::PathRemoveFileSpecW(executablePath);
             ::PathAddBackslashW(executablePath);
-            const bool previewEnabled =
+            const bool transportEnabled =
+                _wcsicmp(__targv[1], L"--probe-mediaobj-transport") == 0;
+            const bool previewEnabled = transportEnabled ||
                 _wcsicmp(__targv[1], L"--probe-mediaobj-preview") == 0;
-            const PlaybackRuntimeProbeResult probe = CPlaybackRuntimeProbe::RunSourceProbe(
-                executablePath, __targv[2], previewEnabled);
-            ::ExitProcess(probe.IsReady() && probe.sourceOpened
-                ? ERROR_SUCCESS : ERROR_OPEN_FAILED);
+            const PlaybackRuntimeProbeResult probe = transportEnabled
+                ? CPlaybackRuntimeProbe::RunTransportProbe(executablePath, __targv[2])
+                : CPlaybackRuntimeProbe::RunSourceProbe(
+                    executablePath, __targv[2], previewEnabled);
+            const bool passed = probe.IsReady() && probe.sourceOpened &&
+                (!transportEnabled || probe.transportPassed);
+            ::ExitProcess(passed ? ERROR_SUCCESS : ERROR_OPEN_FAILED);
         }
 
         CMainFrame* frame = new CMainFrame;

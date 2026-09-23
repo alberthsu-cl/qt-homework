@@ -10,14 +10,17 @@ The project demonstrates the complete UI and controller loop for:
 
 - importing one media file;
 - showing it in the media library;
-- source play, pause, stop, and seek controls;
+- source play, pause, stop, and a disabled seek-control placeholder;
 - a preview region for the selected source;
 - an asset-information Properties panel;
 - separated QML components for each editor region.
 
-Image files render directly in the preview. Video and audio files show the
-MediaObj source-player placeholder. SIMBA, timelines, editing commands, and
-effects are outside the Homework-2 scope.
+Image files render directly in the preview. Video playback is not yet working
+in the MO-only runtime: source metadata loads, but the video-only graph fails
+at `SetVisible(TRUE)` with `E_FAIL` for the sample MP4s. The UI now reports
+that failure and disables transport instead of presenting a blank surface as
+successful playback. SIMBA, timelines, editing commands, and effects are
+outside the Homework-2 scope.
 
 ## QML layout
 
@@ -87,10 +90,14 @@ verified. To probe an actual source without starting the UI:
 ```powershell
 .\bin_x64\MediaPlayer.exe --probe-mediaobj "C:\media\sample.mp3"
 .\bin_x64\MediaPlayer.exe --probe-mediaobj-preview "C:\media\sample.mp4"
+.\bin_x64\MediaPlayer.exe --probe-mediaobj-transport "C:\media\sample.mp4"
 ```
 
-The preview probe creates a private native window and verifies the preview/EVR
-graph without opening the full QML application.
+The preview probe creates a private native window and verifies source loading
+with preview configuration without opening the full QML application. It does
+not verify decoded video frames.
+The transport probe additionally verifies play, position, pause, and stop
+through the same MediaObj adapter used by the application.
 
 The current bundle opens the supplied MP3 and H.264 MP4 samples and reads their
 metadata. Images continue to use the direct QML image path rather than a

@@ -6,10 +6,21 @@ Rectangle
     id: root
     property bool playing: false
     property bool canPlay: false
+    property int positionMs: 0
+    property int durationMs: 0
     signal playRequested()
     signal stopRequested()
     color: "#242932"
     height: 46
+
+    function formatTime(milliseconds)
+    {
+        var totalSeconds = Math.max(0, Math.floor(milliseconds / 1000))
+        var minutes = Math.floor(totalSeconds / 60)
+        var seconds = totalSeconds % 60
+        return (minutes < 10 ? "0" : "") + minutes + ":" +
+               (seconds < 10 ? "0" : "") + seconds
+    }
 
     Button
     {
@@ -41,8 +52,9 @@ Rectangle
         anchors.right: parent.right
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
-        width: 92
-        text: root.playing ? "00:00:05:12" : "00:00:00:00"
+        width: 112
+        text: root.formatTime(root.positionMs) + " / " +
+              root.formatTime(root.durationMs)
         color: "#e4e9ef"
         font.family: "Consolas"
     }
@@ -55,8 +67,8 @@ Rectangle
         height: 30
         anchors.verticalCenter: parent.verticalCenter
         from: 0
-        to: 100
-        value: 0
-        enabled: root.canPlay
+        to: Math.max(1, root.durationMs)
+        value: root.positionMs
+        enabled: false
     }
 }

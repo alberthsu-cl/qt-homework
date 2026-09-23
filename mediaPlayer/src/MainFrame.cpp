@@ -11,6 +11,8 @@
 namespace {
 
 const int kStatusHeight = 28;
+const UINT_PTR kPlaybackTimerId = 1;
+const UINT kPlaybackTimerIntervalMs = 200;
 
 std::string ToUtf8(const CString& value)
 {
@@ -30,6 +32,7 @@ std::string ToUtf8(const CString& value)
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_WM_CREATE()
     ON_WM_SIZE()
+    ON_WM_TIMER()
     ON_WM_DESTROY()
     ON_COMMAND(IDM_FILE_IMPORT, &CMainFrame::OnFileImport)
     ON_COMMAND(IDM_FILE_EXIT, &CMainFrame::OnFileExit)
@@ -61,14 +64,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT createStruct)
                     CRect(0, 0, 0, 0), this, 0);
     m_status.SetFont(GetFont());
 
-    m_previewWindow = ::CreateWindowExW(0, L"STATIC", nullptr,
-        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SS_BLACKRECT,
-        0, 0, 1, 1, GetSafeHwnd(), nullptr, AfxGetInstanceHandle(), nullptr);
-
     m_controller.reset(new CMediaPlayerController());
-    m_controller->SetPreviewWindow(m_previewWindow);
+    m_controller->SetPreviewWindow(GetSafeHwnd());
     m_viewController.reset(new CMediaPlayerViewController(
-        m_controller.get(), GetSafeHwnd(), m_previewWindow));
+        m_controller.get(), GetSafeHwnd()));
     if (!m_viewController->Present())
         m_status.SetWindowText(_T("  QtKit.dll failed to load from the executable folder."));
 
@@ -77,8 +76,22 @@ int CMainFrame::OnCreate(LPCREATESTRUCT createStruct)
 
 LRESULT CMainFrame::OnPreviewSize(WPARAM wParam, LPARAM lParam)
 {
-    if (m_controller)
-        m_controller->ResizePreview(static_cast<int>(wParam), static_cast<int>(lParam));
+    const int x = static_cast<short>(LOWORD(wParam));
+    const int y = static_cast<short>(HIWORD(wParam));
+    const int width = static_cast<short>(LOWORD(lParam));
+    const int height = static_cast<short>(HIWORD(lParam));
+    if (width > 0 && height > 0)
+    {
+        if (m_controller)
+            m_controller->ResizePreview(x, y, width, height);
+        m_previewGeometryReady = true;
+        if (!m_pendingStartupPath.IsEmpty())
+        {
+            const CString path = m_pendingStartupPath;
+            m_pendingStartupPath.Empty();
+            ImportMedia(path);
+        }
+    }
     return 0;
 }
 
@@ -94,7 +107,12 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM)
             CString path(__targv[1]);
             path.Trim(_T('"'));
             if (::PathFileExists(path))
-                ImportMedia(path);
+            {
+                if (m_previewGeometryReady)
+                    ImportMedia(path);
+                else
+                    m_pendingStartupPath = path;
+            }
         }
         return 0;
     }
@@ -111,20 +129,41 @@ LRESULT CMainFrame::OnQmlClick(WPARAM wParam, LPARAM)
         return 0;
     }
 
-    CString text;
-    switch (click)
+    if (click == kClickPlay)
     {
-    case kClickPlay:
-        text.Format(_T("  Preview: %s"), m_controller->IsPlaying() ? _T("playing") : _T("paused"));
-        break;
-    case kClickStop:
-        text = _T("  Preview stopped.");
-        break;
-    default:
-        break;
+        m_controller->TogglePlay();
+        if (m_controller->IsPlaying())
+            SetTimer(kPlaybackTimerId, kPlaybackTimerIntervalMs, nullptr);
+        else
+            KillTimer(kPlaybackTimerId);
+        CString text;
+        text.Format(_T("  Preview: %s"),
+            m_controller->IsPlaying() ? _T("playing") : _T("paused"));
+        m_status.SetWindowText(text);
+        return 0;
     }
-    m_status.SetWindowText(text);
+
+    if (click == kClickStop)
+    {
+        KillTimer(kPlaybackTimerId);
+        m_controller->Stop();
+        m_status.SetWindowText(_T("  Preview stopped."));
+        return 0;
+    }
+
     return 0;
+}
+
+void CMainFrame::OnTimer(UINT_PTR eventId)
+{
+    if (eventId == kPlaybackTimerId && m_controller)
+    {
+        if (m_controller->IsPlaying())
+            m_controller->RefreshPlaybackPosition();
+        else
+            KillTimer(kPlaybackTimerId);
+    }
+    CFrameWnd::OnTimer(eventId);
 }
 
 void CMainFrame::OnFileImport()
@@ -183,6 +222,7 @@ void CMainFrame::LayoutChildren()
 
 void CMainFrame::OnDestroy()
 {
+    KillTimer(kPlaybackTimerId);
     if (m_controller)
         m_controller->SetPreviewWindow(nullptr);
     if (m_viewController)
@@ -192,8 +232,5 @@ void CMainFrame::OnDestroy()
     }
     QtKitHost::Inst().Stop();
     m_controller.reset();
-    if (m_previewWindow && ::IsWindow(m_previewWindow))
-        ::DestroyWindow(m_previewWindow);
-    m_previewWindow = nullptr;
     CFrameWnd::OnDestroy();
 }

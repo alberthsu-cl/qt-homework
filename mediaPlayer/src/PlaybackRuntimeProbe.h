@@ -8,6 +8,7 @@ struct PlaybackRuntimeProbeResult
     bool comInitialized{ false };
     bool mediaObjActivated{ false };
     bool sourceOpened{ false };
+    bool transportPassed{ false };
     std::wstring statusText;
 
     bool IsReady() const
@@ -29,4 +30,10 @@ public:
         const std::wstring& executableDirectory,
         const std::wstring& sourcePath,
         bool previewEnabled = false);
+
+    // Loads a preview graph and exercises play, position, pause, and stop on
+    // the same adapter used by the application controller.
+    static PlaybackRuntimeProbeResult RunTransportProbe(
+        const std::wstring& executableDirectory,
+        const std::wstring& sourcePath);
 };

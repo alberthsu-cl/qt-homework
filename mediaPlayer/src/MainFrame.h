@@ -30,6 +30,7 @@ public:
 protected:
     afx_msg int OnCreate(LPCREATESTRUCT createStruct);
     afx_msg void OnSize(UINT type, int width, int height);
+    afx_msg void OnTimer(UINT_PTR eventId);
     afx_msg void OnDestroy();
     afx_msg void OnFileImport();
     afx_msg void OnFileExit();
@@ -42,7 +43,8 @@ private:
     void ImportMedia(const CString& path);
 
     CStatic m_status;
-    HWND m_previewWindow{ nullptr };
+    CString m_pendingStartupPath;
+    bool m_previewGeometryReady{ false };
     std::unique_ptr<CMediaPlayerController> m_controller;
     std::unique_ptr<CMediaPlayerViewController> m_viewController;
 };

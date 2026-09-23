@@ -15,7 +15,7 @@
 
 | Scenario | Expected result |
 |---|---|
-| Valid video | Metadata and native source preview are available. |
+| Valid video | Metadata loads; native preview must show decoded frames before it is accepted. |
 | Valid audio | Metadata and transport work; preview explains audio-only behavior. |
 | Valid image | Asset information is shown; no unsupported transport is invented. |
 | Invalid file | No MediaObj object remains loaded; Properties shows an actionable status. |
@@ -33,10 +33,13 @@
 | `Food.jpg` image open | Pass by QML route | Image preview bypasses MediaObj playback. |
 | `Mountainbiker.mp4` source open | Pass | `LoadClip` returns `S_OK` with the staged MP4 splitter and H.264 decoder. |
 | `Skateboard 01.mp4` source open | Pass | `LoadClip` returns `S_OK` with the same minimal runtime. |
-| Native preview graph | Pass | `--probe-mediaobj-preview` verified preview/EVR graph construction, `SetDisplayWnd`, MP4 loading, and metadata against a private HWND. |
+| Native preview placement | Pass | QML reports a valid frame-local rectangle before import; the native surface stays inside the preview panel. |
+| Native decoded video | Fail | Both sample MP4s return `E_FAIL` from `SetVisible(TRUE)` when the graph is restricted to video, even with the complete local PDR MO folders. Video Renderer, VMR7, VMR9, and EVR were tried; no visible video frame was confirmed. |
+| MediaObj transport API | Partial | Play, position, pause, and stop calls can succeed with a mixed audio/video graph, but this does not prove decoded video. The UI disables transport when the video-only graph fails. |
 
-Interactive playback and transport remain future acceptance criteria. The
-preview probe verifies graph construction and native-window attachment only.
+Interactive playback is not accepted until actual video frames are visible.
+The existing probes cover source loading and transport API calls only; they
+must not be treated as proof of video rendering.
 
 ## Evidence record
 

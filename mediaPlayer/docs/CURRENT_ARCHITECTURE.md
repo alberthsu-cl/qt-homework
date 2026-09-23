@@ -14,9 +14,9 @@ this project.
 ```text
 MFC main frame
   -> MediaPlayerController: application state and user intent
-  -> MediaObj source adapter: COM lifetime, LoadClip, metadata, errors
+  -> MediaObj source adapter: COM lifetime, source loading, transport, errors
   -> MediaPlayerViewController: QtKit host and QML bindings
-  -> QtKit WindowHost: native child HWND used by MediaObj video preview
+  -> MFC frame: native MediaObj display parent and frame-local preview rect
   -> QML: Media Library, Preview, Properties, and transport presentation
 ```
 
@@ -31,12 +31,14 @@ MediaObj pointer.
 - Let engine results, not a QML timer, define source position and transport
   state.
 - Keep QML binding and child-window lifetime inside `CMediaPlayerViewController`.
-- Let `WindowHost` own native preview geometry; marshal resize notifications
-  back to the MFC thread before calling MediaObj.
+- Let QML report the preview rectangle in window coordinates; marshal its
+  changes to the MFC thread before calling MediaObj.
 
 ## Current implementation state
 
 The QtKit/QML shell, media catalog, MediaObj source adapter, runtime staging,
-command-line source probes, and H2-03 native `WindowHost` preview surface
-exist. H2-04 transport remains separate; a passing preview-graph probe proves
-window and renderer graph construction, not play/pause/seek behavior.
+H2-03 native MediaObj preview placement and H2-04 transport calls exist, but
+decoded video remains blocked: `SetVisible(TRUE)` returns `E_FAIL` for the
+video-only graph with the staged MO runtime. The MFC playback timer samples
+MediaObj's position only when playback is available. Seeking remains a later
+milestone.

@@ -5,13 +5,12 @@
 #include "MediaPlayerNames.h"
 #include "QtKitHost.h"
 
+
 CMediaPlayerViewController::CMediaPlayerViewController(
     CMediaPlayerController* controller,
-    HWND notifyWindow,
-    HWND previewWindow)
+    HWND notifyWindow)
     : m_controller(controller)
     , m_notifyWindow(notifyWindow)
-    , m_previewWindow(previewWindow)
 {
 }
 
@@ -27,14 +26,6 @@ bool CMediaPlayerViewController::Present()
 
 void CMediaPlayerViewController::Dismiss()
 {
-    IQmlContext* context = QtKitHost::Inst().Context();
-    if (context && context->isObjectBound(MediaPlayerName.previewHost))
-    {
-        context->runOnQtThreadSync([context]() {
-            if (context->isObjectBound(MediaPlayerName.previewHost))
-                context->windowHost(MediaPlayerName.previewHost).window(nullptr);
-        });
-    }
     if (m_qmlWindow && ::IsWindow(m_qmlWindow))
     {
         ::SetParent(m_qmlWindow, nullptr);
@@ -94,16 +85,7 @@ void CMediaPlayerViewController::OnQmlDidLoad()
 
     WireButtons(context);
     WireSelectionProperty(context);
-    if (context->isObjectBound(MediaPlayerName.previewHost) && m_previewWindow)
-        context->windowHost(MediaPlayerName.previewHost).window(m_previewWindow);
-    if (context->isObjectBound(MediaPlayerName.previewArea))
-    {
-        context->item(MediaPlayerName.previewArea).setSizeChangedAction(
-            [this](float width, float height) {
-                ::PostMessage(m_notifyWindow, WM_APP_PREVIEW_SIZE,
-                    static_cast<WPARAM>(width), static_cast<LPARAM>(height));
-            });
-    }
+    WirePreviewGeometry(context);
     m_controller->PublishState();
     m_ready = true;
     ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK, kClickReady, 0);
@@ -126,6 +108,29 @@ void CMediaPlayerViewController::WireSelectionProperty(IQmlContext* context)
 
             m_requestedMediaIndex.store(mediaIndex);
             ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK, kClickSelectMedia, 0);
+        });
+}
+
+void CMediaPlayerViewController::WirePreviewGeometry(IQmlContext* context)
+{
+    if (!context->isObjectBound(MediaPlayerName.property))
+        return;
+
+    context->property(MediaPlayerName.property).setPropertyChangedAction(
+        "previewRevision", [this, context]() {
+            if (!context->isObjectBound(MediaPlayerName.property))
+                return;
+
+            auto& property = context->property(MediaPlayerName.property);
+            const int x = property.propertyInt("previewX");
+            const int y = property.propertyInt("previewY");
+            const int width = property.propertyInt("previewWidth");
+            const int height = property.propertyInt("previewHeight");
+            QtKitHost::Log("[H2-03] QML preview rect: %d,%d %dx%d",
+                x, y, width, height);
+
+            ::PostMessage(m_notifyWindow, WM_APP_PREVIEW_SIZE,
+                MAKELPARAM(x, y), MAKELPARAM(width, height));
         });
 }
 
@@ -157,25 +162,23 @@ void CMediaPlayerViewController::UpdateSelectedMediaPreview(IQmlContext* context
         if (sourceInfo.loaded && asset.kind == MediaKind::Image)
             message = "Image ready: " + asset.displayName + " - direct QML preview";
         else if (sourceInfo.loaded)
-            message = "MediaObj loaded " + asset.displayName + " - preview playback is pending";
+            message = "Ready: " + asset.displayName + " - MediaObj transport available";
         context->label(MediaPlayerName.statusLabel).text(message.c_str());
     }
 }
 
 void CMediaPlayerViewController::WireButtons(IQmlContext* context)
 {
-    using Action = void (CMediaPlayerController::*)();
     struct ButtonAction
     {
         const char* name;
         QmlClick code;
-        Action action;
     };
 
     const ButtonAction actions[] = {
-        { MediaPlayerName.importButton, kClickImport, nullptr },
-        { MediaPlayerName.playButton, kClickPlay, &CMediaPlayerController::TogglePlay },
-        { MediaPlayerName.stopButton, kClickStop, &CMediaPlayerController::Stop },
+        { MediaPlayerName.importButton, kClickImport },
+        { MediaPlayerName.playButton, kClickPlay },
+        { MediaPlayerName.stopButton, kClickStop },
     };
 
     for (const auto& item : actions)
@@ -187,8 +190,6 @@ void CMediaPlayerViewController::WireButtons(IQmlContext* context)
         }
 
         context->button(item.name).setClickedAction([this, item]() {
-            if (item.action)
-                (m_controller->*item.action)();
             ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK,
                           static_cast<WPARAM>(item.code), 0);
         });
@@ -204,6 +205,9 @@ void CMediaPlayerViewController::SetViewportSize(int width, int height)
     context->runOnQtThread([context, width, height]() {
         if (context->isObjectBound(MediaPlayerName.window))
             context->window(MediaPlayerName.window).setPosition(0, 0, width, height);
+        if (context->isObjectBound(MediaPlayerName.property))
+            context->property(MediaPlayerName.property)
+                .property("previewLayoutReady", true);
     });
 }
 

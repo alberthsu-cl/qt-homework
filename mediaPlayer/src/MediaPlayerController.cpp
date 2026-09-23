@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <climits>
 #include <sstream>
 
 CMediaPlayerController::CMediaPlayerController() = default;
@@ -73,14 +74,46 @@ void CMediaPlayerController::TogglePlay()
 {
     const SelectedMedia asset = SelectedAsset();
     const SourceMediaInfo sourceInfo = SelectedSourceInfo();
-    if (m_hasMedia && asset.kind != MediaKind::Image && sourceInfo.loaded)
-        m_isPlaying = !m_isPlaying.load();
-    PublishState();
+    if (!m_hasMedia || asset.kind == MediaKind::Image || !sourceInfo.loaded)
+        return;
+
+    const bool wasPlaying = m_isPlaying.load();
+    const bool succeeded = wasPlaying
+        ? m_sourceAdapter.Pause() : m_sourceAdapter.Play();
+    if (succeeded)
+        m_isPlaying = !wasPlaying;
+
+    {
+        std::lock_guard<std::mutex> guard(m_mediaMutex);
+        m_selectedSourceInfo = m_sourceAdapter.CurrentInfo();
+    }
+    RefreshPlaybackPosition();
 }
 
 void CMediaPlayerController::Stop()
 {
-    m_isPlaying = false;
+    const SelectedMedia asset = SelectedAsset();
+    const SourceMediaInfo sourceInfo = SelectedSourceInfo();
+    if (!m_hasMedia || asset.kind == MediaKind::Image || !sourceInfo.loaded)
+        return;
+
+    if (m_sourceAdapter.Stop())
+    {
+        m_isPlaying = false;
+        m_position100ns = 0;
+    }
+    {
+        std::lock_guard<std::mutex> guard(m_mediaMutex);
+        m_selectedSourceInfo = m_sourceAdapter.CurrentInfo();
+    }
+    PublishState();
+}
+
+void CMediaPlayerController::RefreshPlaybackPosition()
+{
+    int64_t position100ns = 0;
+    if (m_sourceAdapter.GetCurrentPosition(position100ns))
+        m_position100ns = position100ns;
     PublishState();
 }
 
@@ -89,9 +122,9 @@ void CMediaPlayerController::SetPreviewWindow(HWND window)
     m_sourceAdapter.SetPreviewWindow(window);
 }
 
-void CMediaPlayerController::ResizePreview(int width, int height)
+void CMediaPlayerController::ResizePreview(int x, int y, int width, int height)
 {
-    m_sourceAdapter.ResizePreview(width, height);
+    m_sourceAdapter.ResizePreview(x, y, width, height);
 }
 
 SelectedMedia CMediaPlayerController::SelectedAsset() const
@@ -205,6 +238,7 @@ std::string CMediaPlayerController::CreateCatalogJson(const std::vector<Selected
 
 void CMediaPlayerController::LoadSelectedSource(const SelectedMedia& asset)
 {
+    m_position100ns = 0;
     SourceMediaInfo sourceInfo;
     if (asset.kind == MediaKind::Image)
     {
@@ -237,7 +271,12 @@ void CMediaPlayerController::PublishState()
     const std::string mediaKind = MediaKindText(asset.kind);
     const bool hasMedia = m_hasMedia.load();
     const bool playing = m_isPlaying.load();
-    context->runOnQtThread([context, asset, catalogJson, mediaKind, sourceInfo, hasMedia, playing]() {
+    const int positionMs = static_cast<int>(std::min<int64_t>(
+        m_position100ns.load() / 10000, INT_MAX));
+    const int durationMs = static_cast<int>(std::min<int64_t>(
+        sourceInfo.duration100ns / 10000, INT_MAX));
+    context->runOnQtThread([context, asset, catalogJson, mediaKind, sourceInfo,
+                            hasMedia, playing, positionMs, durationMs]() {
         if (!context->isObjectBound(MediaPlayerName.property))
             return;
 
@@ -252,5 +291,9 @@ void CMediaPlayerController::PublishState()
         property.property("mediaLoadError", static_cast<int>(sourceInfo.errorCode));
         property.property("hasMedia", hasMedia);
         property.property("playing", playing);
+        property.property("positionMs", positionMs);
+        property.property("durationMs", durationMs);
+        if (context->isObjectBound(MediaPlayerName.statusLabel))
+            context->label(MediaPlayerName.statusLabel).text(sourceInfo.statusText.c_str());
     });
 }

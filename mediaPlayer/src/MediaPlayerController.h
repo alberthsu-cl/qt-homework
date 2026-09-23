@@ -37,8 +37,9 @@ public:
     bool SelectMedia(size_t catalogIndex);
     void TogglePlay();
     void Stop();
+    void RefreshPlaybackPosition();
     void SetPreviewWindow(HWND window);
-    void ResizePreview(int width, int height);
+    void ResizePreview(int x, int y, int width, int height);
     void PublishState();
 
     bool HasMedia() const { return m_hasMedia.load(); }
@@ -56,6 +57,7 @@ private:
 
     std::atomic<bool> m_hasMedia{ false };
     std::atomic<bool> m_isPlaying{ false };
+    std::atomic<int64_t> m_position100ns{ 0 };
     mutable std::mutex m_mediaMutex;
     std::vector<SelectedMedia> m_catalog;
     size_t m_selectedIndex{ 0 };

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtKit
+import QtQuick.Window
 
 Rectangle
 {
@@ -9,14 +9,35 @@ Rectangle
     property string mediaName: ""
     property string mediaKind: "Unknown"
     property string mediaSource: ""
-    property string previewHostBindingName: ""
-    property string previewAreaBindingName: ""
+    property bool layoutReady: false
     property bool playing: false
     property bool canPlay: false
+    property int positionMs: 0
+    property int durationMs: 0
     signal playRequested()
     signal stopRequested()
+    signal previewRectReported(int x, int y, int width, int height)
+
+    function reportPreviewRect()
+    {
+        Qt.callLater(publishPreviewRect)
+    }
+
+    function publishPreviewRect()
+    {
+        if (!root.layoutReady || previewArea.width <= 0 ||
+            previewArea.height <= 0)
+            return
+        var point = previewArea.mapToItem(null, 0, 0)
+        var scale = Screen.devicePixelRatio
+        previewRectReported(Math.round(point.x * scale),
+                            Math.round(point.y * scale),
+                            Math.round(previewArea.width * scale),
+                            Math.round(previewArea.height * scale))
+    }
 
     color: "#111419"
+    onLayoutReadyChanged: reportPreviewRect()
 
     Rectangle
     {
@@ -36,21 +57,12 @@ Rectangle
             anchors.fill: parent
             anchors.margins: 2
             visible: root.hasMedia && root.mediaKind === "Video"
-            property UIItem binding
-            Component.onCompleted: binding = qmlContext.bindItem(
-                this, root.previewAreaBindingName)
-            Component.onDestruction: qmlContext.unbind(
-                this, root.previewAreaBindingName)
-
-            WindowHost
-            {
-                anchors.fill: parent
-                property WindowHost binding
-                Component.onCompleted: binding = qmlContext.bindWindowHost(
-                    this, root.previewHostBindingName)
-                Component.onDestruction: qmlContext.unbind(
-                    this, root.previewHostBindingName)
-            }
+            Component.onCompleted: root.reportPreviewRect()
+            onXChanged: root.reportPreviewRect()
+            onYChanged: root.reportPreviewRect()
+            onWidthChanged: root.reportPreviewRect()
+            onHeightChanged: root.reportPreviewRect()
+            onVisibleChanged: root.reportPreviewRect()
         }
 
         Image
@@ -117,6 +129,8 @@ Rectangle
         anchors.bottom: parent.bottom
         canPlay: root.canPlay
         playing: root.playing
+        positionMs: root.positionMs
+        durationMs: root.durationMs
         onPlayRequested: root.playRequested()
         onStopRequested: root.stopRequested()
     }

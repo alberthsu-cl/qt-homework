@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MediaObjSourceAdapter.h"
+#include "QtKitHost.h"
 
 #include <objbase.h>
 #include <sstream>
@@ -22,15 +23,20 @@ const DWORD kMediaInfoTypeMediaType = 0x0000;
 const DWORD kMediaInfoTypeWidth = 0x0004;
 const DWORD kMediaInfoTypeHeight = 0x0005;
 const DWORD kMediaInfoTypeDuration = 0x0007;
+const uint32_t kMediaTypeVideo = 1;
 const DWORD kMediaObjModeVideoRenderer = 5;
 const DWORD kMediaObjModeGraph = 23;
-const int kMediaObjRendererEvr = 4;
+const UINT kMediaObjValidVideo = 1;
+const int kMediaObjRendererVideo = 0;
 const int kMediaObjRendererNull = 3;
 const int kMediaObjGraphPreview = 0;
 const int kMediaObjGraphSnapshot = 1;
 
+struct MediaObjVroCacheInfo;
+
 // Keep this prefix in exact ABI order with the PDR IMEDIAOBJ8 declaration.
-// H2-02 needs only source loading and basic metadata; transport is H2-04.
+// The opaque VRO argument preserves the pointer-sized ABI without importing
+// the product MediaObj headers into this standalone homework.
 struct IMediaObj8Source : IUnknown
 {
     virtual void STDMETHODCALLTYPE SetEventCB(void* callback, void* caller) = 0;
@@ -41,6 +47,38 @@ struct IMediaObj8Source : IUnknown
                                                BOOL alwaysRender) = 0;
     virtual void STDMETHODCALLTYPE Unload() = 0;
     virtual HRESULT STDMETHODCALLTYPE GetMediaInfo(DWORD type, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetMediaInfo(DWORD type, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetPreferredFilter(DWORD type, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetPreferredFilter(DWORD type, LPVOID value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetClipName(CHAR* name, UINT* size) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetClipName(WCHAR* name, UINT* size) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetVROSegmentNum(int& segmentCount) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetVROCacheInfo(
+        UINT index, MediaObjVroCacheInfo& cacheInfo) = 0;
+    virtual HBITMAP STDMETHODCALLTYPE GetDDBBitmap(HDC dc) = 0;
+    virtual HBITMAP STDMETHODCALLTYPE GetDIBBitmap() = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetValidStream(UINT validStream) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetStretchMode(UINT stretchMode) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetVisible(BOOL visible) = 0;
+    virtual HRESULT STDMETHODCALLTYPE UpdateView() = 0;
+    virtual HRESULT STDMETHODCALLTYPE MuteAudio(BOOL mute) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetVolume(float volume) = 0;
+    virtual float STDMETHODCALLTYPE GetVolume() = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetTransportStreamProgPos(INT position) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetTransportStreamProgramInfo(PINT programInfo) = 0;
+    virtual HRESULT STDMETHODCALLTYPE ParseTransportStream(INT priority) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetProgramCount(INT* count) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetProgramInfo(INT programId, LPVOID programInfo) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetTransportStreamProgIdx(INT programIndex) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetCurrentProgramIndex(INT* programIndex) = 0;
+    virtual BOOL STDMETHODCALLTYPE IsClipTSParsed() = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetStillStopping(BOOL still) = 0;
+    virtual HRESULT STDMETHODCALLTYPE ClipPlay(float speedFactor) = 0;
+    virtual HRESULT STDMETHODCALLTYPE ClipPause() = 0;
+    virtual HRESULT STDMETHODCALLTYPE ClipStop() = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetCurrentPosition(LONGLONG* currentPosition) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetCurrentPosition(
+        LONGLONG currentPosition, LONGLONG stopPosition) = 0;
 };
 
 struct IClRegPathSource : IUnknown
@@ -82,7 +120,7 @@ HRESULT ConfigureGraph(IUnknown* mediaObj, bool previewEnabled)
     HRESULT result = mediaInfo->SetModeInfo(kMediaObjModeGraph, &graphMode);
     if (SUCCEEDED(result))
     {
-        int renderer = previewEnabled ? kMediaObjRendererEvr : kMediaObjRendererNull;
+        int renderer = previewEnabled ? kMediaObjRendererVideo : kMediaObjRendererNull;
         result = mediaInfo->SetModeInfo(kMediaObjModeVideoRenderer, &renderer);
     }
     mediaInfo->Release();
@@ -135,9 +173,12 @@ SourceMediaInfo CMediaObjSourceAdapter::Load(const std::string& utf8Path)
 
     if (previewEnabled)
     {
-        RECT previewBounds = { 0, 0, 1, 1 };
-        ::GetClientRect(m_previewWindow, &previewBounds);
-        const HRESULT displayResult = mediaObj->SetDisplayWnd(m_previewWindow, previewBounds);
+        QtKitHost::Log("[H2-03] load display rect: %ld,%ld %ldx%ld",
+            m_previewBounds.left, m_previewBounds.top,
+            m_previewBounds.right - m_previewBounds.left,
+            m_previewBounds.bottom - m_previewBounds.top);
+        const HRESULT displayResult = mediaObj->SetDisplayWnd(
+            m_previewWindow, m_previewBounds);
         if (FAILED(displayResult))
         {
             m_info.errorCode = displayResult;
@@ -165,6 +206,25 @@ SourceMediaInfo CMediaObjSourceAdapter::Load(const std::string& utf8Path)
         return m_info;
     }
 
+    if (previewEnabled && m_info.mediaType == kMediaTypeVideo)
+    {
+        const HRESULT streamResult = mediaObj->SetValidStream(kMediaObjValidVideo);
+        QtKitHost::Log("[H2-03] SetValidStream(video): 0x%08lX",
+            static_cast<unsigned long>(streamResult));
+        const HRESULT visibleResult = SUCCEEDED(streamResult)
+            ? mediaObj->SetVisible(TRUE) : streamResult;
+        QtKitHost::Log("[H2-03] SetVisible(TRUE): 0x%08lX",
+            static_cast<unsigned long>(visibleResult));
+        if (FAILED(visibleResult))
+        {
+            mediaObj->SetVisible(FALSE);
+            m_info.loaded = false;
+            m_info.errorCode = visibleResult;
+            m_info.statusText = "MediaObj video graph failed: " +
+                FormatHResult(visibleResult);
+        }
+    }
+
     const HRESULT widthResult = mediaObj->GetMediaInfo(kMediaInfoTypeWidth, &m_info.width);
     const HRESULT heightResult = mediaObj->GetMediaInfo(kMediaInfoTypeHeight, &m_info.height);
     m_info.hasDimensions = SUCCEEDED(widthResult) && SUCCEEDED(heightResult) &&
@@ -189,6 +249,63 @@ void CMediaObjSourceAdapter::Unload()
     m_info = SourceMediaInfo{};
 }
 
+bool CMediaObjSourceAdapter::Play()
+{
+    const HRESULT result = m_mediaObj
+        ? static_cast<IMediaObj8Source*>(m_mediaObj)->ClipPlay(1.0f)
+        : E_UNEXPECTED;
+    return ApplyTransportResult(result, "MediaObj playback started.",
+                                "MediaObj ClipPlay failed: ");
+}
+
+bool CMediaObjSourceAdapter::Pause()
+{
+    const HRESULT result = m_mediaObj
+        ? static_cast<IMediaObj8Source*>(m_mediaObj)->ClipPause()
+        : E_UNEXPECTED;
+    return ApplyTransportResult(result, "MediaObj playback paused.",
+                                "MediaObj ClipPause failed: ");
+}
+
+bool CMediaObjSourceAdapter::Stop()
+{
+    const HRESULT result = m_mediaObj
+        ? static_cast<IMediaObj8Source*>(m_mediaObj)->ClipStop()
+        : E_UNEXPECTED;
+    return ApplyTransportResult(result, "MediaObj playback stopped.",
+                                "MediaObj ClipStop failed: ");
+}
+
+bool CMediaObjSourceAdapter::GetCurrentPosition(int64_t& position100ns)
+{
+    position100ns = 0;
+    if (!m_mediaObj)
+        return false;
+
+    LONGLONG position = 0;
+    const HRESULT result =
+        static_cast<IMediaObj8Source*>(m_mediaObj)->GetCurrentPosition(&position);
+    if (FAILED(result))
+        return false;
+
+    position100ns = position;
+    return true;
+}
+
+bool CMediaObjSourceAdapter::ApplyTransportResult(
+    long result, const char* successText, const char* failureText)
+{
+    m_info.errorCode = result;
+    if (SUCCEEDED(result))
+    {
+        m_info.statusText = successText;
+        return true;
+    }
+
+    m_info.statusText = std::string(failureText) + FormatHResult(result);
+    return false;
+}
+
 void CMediaObjSourceAdapter::SetPreviewWindow(HWND window)
 {
     m_previewWindow = window;
@@ -199,14 +316,21 @@ void CMediaObjSourceAdapter::SetPreviewWindow(HWND window)
     }
 }
 
-void CMediaObjSourceAdapter::ResizePreview(int width, int height)
+void CMediaObjSourceAdapter::ResizePreview(int x, int y, int width, int height)
 {
-    if (!m_mediaObj || !m_previewWindow || !::IsWindow(m_previewWindow) ||
-        width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0)
         return;
 
-    RECT bounds = { 0, 0, width, height };
-    static_cast<IMediaObj8Source*>(m_mediaObj)->SetDisplayWnd(m_previewWindow, bounds);
+    m_previewBounds = { x, y, x + width, y + height };
+    if (!m_mediaObj || !m_previewWindow || !::IsWindow(m_previewWindow))
+        return;
+
+    const HRESULT result = static_cast<IMediaObj8Source*>(m_mediaObj)
+        ->SetDisplayWnd(m_previewWindow, m_previewBounds);
+    if (SUCCEEDED(result) && m_info.loaded && m_info.mediaType == kMediaTypeVideo)
+        static_cast<IMediaObj8Source*>(m_mediaObj)->SetVisible(TRUE);
+    QtKitHost::Log("[H2-03] preview rect: %d,%d %dx%d; SetDisplayWnd=0x%08lX",
+        x, y, width, height, static_cast<unsigned long>(result));
 }
 
 bool CMediaObjSourceAdapter::EnsureMediaObj()

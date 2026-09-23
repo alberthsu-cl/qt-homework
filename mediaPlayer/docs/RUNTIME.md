@@ -20,13 +20,15 @@ Machine-wide registration is not required.
 .\bin_x64\MediaPlayer.exe --probe-playback-runtime
 .\bin_x64\MediaPlayer.exe --probe-mediaobj "C:\path\to\sample.mp3"
 .\bin_x64\MediaPlayer.exe --probe-mediaobj-preview "C:\path\to\sample.mp4"
+.\bin_x64\MediaPlayer.exe --probe-mediaobj-transport "C:\path\to\sample.mp4"
 ```
 
 The first command checks staged files, x64 architecture, COM activation, and
 the MediaObj interface. The second command verifies the metadata-only graph.
 The third creates a private native window and verifies the preview/EVR graph.
-Both source commands record media type, dimensions, duration, and HRESULTs in
-`%TEMP%\MediaPlayer.log`.
+The fourth exercises play, position, pause, and stop through the application
+adapter. The source commands record media type, dimensions, duration, and
+HRESULTs in `%TEMP%\MediaPlayer.log`.
 
 ## Observed evidence
 
