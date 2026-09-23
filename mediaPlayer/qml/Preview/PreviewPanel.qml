@@ -1,12 +1,16 @@
 import QtQuick
 import QtQuick.Controls
+import QtKit
 
 Rectangle
 {
     id: root
     property bool hasMedia: false
     property string mediaName: ""
+    property string mediaKind: "Unknown"
     property string mediaSource: ""
+    property string previewHostBindingName: ""
+    property string previewAreaBindingName: ""
     property bool playing: false
     property bool canPlay: false
     signal playRequested()
@@ -26,6 +30,29 @@ Rectangle
         color: "#090b0e"
         border.color: "#2d333d"
 
+        Item
+        {
+            id: previewArea
+            anchors.fill: parent
+            anchors.margins: 2
+            visible: root.hasMedia && root.mediaKind === "Video"
+            property UIItem binding
+            Component.onCompleted: binding = qmlContext.bindItem(
+                this, root.previewAreaBindingName)
+            Component.onDestruction: qmlContext.unbind(
+                this, root.previewAreaBindingName)
+
+            WindowHost
+            {
+                anchors.fill: parent
+                property WindowHost binding
+                Component.onCompleted: binding = qmlContext.bindWindowHost(
+                    this, root.previewHostBindingName)
+                Component.onDestruction: qmlContext.unbind(
+                    this, root.previewHostBindingName)
+            }
+        }
+
         Image
         {
             id: image
@@ -33,7 +60,8 @@ Rectangle
             anchors.margins: 2
             source: root.mediaSource
             fillMode: Image.PreserveAspectFit
-            visible: root.hasMedia && status === Image.Ready
+            visible: root.hasMedia && root.mediaKind === "Image" &&
+                     status === Image.Ready
             asynchronous: false
         }
 
@@ -41,7 +69,7 @@ Rectangle
         {
             anchors.centerIn: parent
             spacing: 8
-            visible: !image.visible
+            visible: !image.visible && !previewArea.visible
             Label
             {
                 anchors.horizontalCenter: parent.horizontalCenter

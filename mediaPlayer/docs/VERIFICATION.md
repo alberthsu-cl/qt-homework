@@ -33,9 +33,10 @@
 | `Food.jpg` image open | Pass by QML route | Image preview bypasses MediaObj playback. |
 | `Mountainbiker.mp4` source open | Pass | `LoadClip` returns `S_OK` with the staged MP4 splitter and H.264 decoder. |
 | `Skateboard 01.mp4` source open | Pass | `LoadClip` returns `S_OK` with the same minimal runtime. |
+| Native preview graph | Pass | `--probe-mediaobj-preview` verified preview/EVR graph construction, `SetDisplayWnd`, MP4 loading, and metadata against a private HWND. |
 
-Native video preview and transport remain future acceptance criteria. A passing
-source-open probe verifies graph construction and metadata only.
+Interactive playback and transport remain future acceptance criteria. The
+preview probe verifies graph construction and native-window attachment only.
 
 ## Evidence record
 

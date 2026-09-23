@@ -86,7 +86,11 @@ verified. To probe an actual source without starting the UI:
 
 ```powershell
 .\bin_x64\MediaPlayer.exe --probe-mediaobj "C:\media\sample.mp3"
+.\bin_x64\MediaPlayer.exe --probe-mediaobj-preview "C:\media\sample.mp4"
 ```
+
+The preview probe creates a private native window and verifies the preview/EVR
+graph without opening the full QML application.
 
 The current bundle opens the supplied MP3 and H.264 MP4 samples and reads their
 metadata. Images continue to use the direct QML image path rather than a

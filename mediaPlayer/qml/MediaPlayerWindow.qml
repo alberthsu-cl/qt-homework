@@ -136,7 +136,10 @@ Window
             anchors.rightMargin: 1
             hasMedia: MediaPlayerProperty.hasMedia
             mediaName: MediaPlayerProperty.mediaName
+            mediaKind: MediaPlayerProperty.mediaKind
             mediaSource: previewBridge.source
+            previewHostBindingName: MediaPlayerName.previewHost
+            previewAreaBindingName: MediaPlayerName.previewArea
             playing: MediaPlayerProperty.playing
             canPlay: MediaPlayerProperty.hasMedia &&
                      MediaPlayerProperty.mediaKind !== "Image" &&

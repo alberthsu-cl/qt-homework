@@ -6,6 +6,8 @@ struct MediaPlayerNames
     const char* property     = "mediaPlayer.property";
     const char* statusLabel  = "mediaPlayer.statusLabel";
     const char* previewImage = "mediaPlayer.previewImage";
+    const char* previewHost  = "mediaPlayer.previewHost";
+    const char* previewArea  = "mediaPlayer.previewArea";
     const char* importButton = "mediaPlayer.importButton";
     const char* playButton   = "mediaPlayer.playButton";
     const char* stopButton   = "mediaPlayer.stopButton";

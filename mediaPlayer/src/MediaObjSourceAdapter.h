@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <windows.h>
 
 struct SourceMediaInfo
 {
@@ -26,6 +27,8 @@ public:
 
     SourceMediaInfo Load(const std::string& utf8Path);
     void Unload();
+    void SetPreviewWindow(HWND window);
+    void ResizePreview(int width, int height);
     SourceMediaInfo CurrentInfo() const { return m_info; }
 
 private:
@@ -34,6 +37,7 @@ private:
     static std::string FormatHResult(long result);
 
     void* m_mediaObj{ nullptr };
+    HWND m_previewWindow{ nullptr };
     bool m_comInitialized{ false };
     SourceMediaInfo m_info;
 };

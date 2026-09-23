@@ -37,6 +37,8 @@ public:
     bool SelectMedia(size_t catalogIndex);
     void TogglePlay();
     void Stop();
+    void SetPreviewWindow(HWND window);
+    void ResizePreview(int width, int height);
     void PublishState();
 
     bool HasMedia() const { return m_hasMedia.load(); }

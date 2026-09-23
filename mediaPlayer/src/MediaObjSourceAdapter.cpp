@@ -24,7 +24,9 @@ const DWORD kMediaInfoTypeHeight = 0x0005;
 const DWORD kMediaInfoTypeDuration = 0x0007;
 const DWORD kMediaObjModeVideoRenderer = 5;
 const DWORD kMediaObjModeGraph = 23;
+const int kMediaObjRendererEvr = 4;
 const int kMediaObjRendererNull = 3;
+const int kMediaObjGraphPreview = 0;
 const int kMediaObjGraphSnapshot = 1;
 
 // Keep this prefix in exact ABI order with the PDR IMEDIAOBJ8 declaration.
@@ -68,7 +70,7 @@ void ApplyPdrRegistryPath(IUnknown* mediaObj)
     regPath->Release();
 }
 
-HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
+HRESULT ConfigureGraph(IUnknown* mediaObj, bool previewEnabled)
 {
     IMediaObjInfoSource* mediaInfo = nullptr;
     const HRESULT queryResult = mediaObj->QueryInterface(kIidMediaObjInfo,
@@ -76,11 +78,11 @@ HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
     if (FAILED(queryResult) || !mediaInfo)
         return queryResult;
 
-    int graphMode = kMediaObjGraphSnapshot;
+    int graphMode = previewEnabled ? kMediaObjGraphPreview : kMediaObjGraphSnapshot;
     HRESULT result = mediaInfo->SetModeInfo(kMediaObjModeGraph, &graphMode);
     if (SUCCEEDED(result))
     {
-        int renderer = kMediaObjRendererNull;
+        int renderer = previewEnabled ? kMediaObjRendererEvr : kMediaObjRendererNull;
         result = mediaInfo->SetModeInfo(kMediaObjModeVideoRenderer, &renderer);
     }
     mediaInfo->Release();
@@ -122,12 +124,27 @@ SourceMediaInfo CMediaObjSourceAdapter::Load(const std::string& utf8Path)
     std::vector<wchar_t> mutablePath(path.begin(), path.end());
     mutablePath.push_back(L'\0');
     IMediaObj8Source* mediaObj = static_cast<IMediaObj8Source*>(m_mediaObj);
-    const HRESULT configureResult = ConfigureSourceOnlyGraph(mediaObj);
+    const bool previewEnabled = m_previewWindow && ::IsWindow(m_previewWindow);
+    const HRESULT configureResult = ConfigureGraph(mediaObj, previewEnabled);
     if (FAILED(configureResult))
     {
         m_info.errorCode = configureResult;
         m_info.statusText = "MediaObj source graph setup failed: " + FormatHResult(configureResult);
         return m_info;
+    }
+
+    if (previewEnabled)
+    {
+        RECT previewBounds = { 0, 0, 1, 1 };
+        ::GetClientRect(m_previewWindow, &previewBounds);
+        const HRESULT displayResult = mediaObj->SetDisplayWnd(m_previewWindow, previewBounds);
+        if (FAILED(displayResult))
+        {
+            m_info.errorCode = displayResult;
+            m_info.statusText = "MediaObj preview window setup failed: " +
+                FormatHResult(displayResult);
+            return m_info;
+        }
     }
 
     const HRESULT loadResult = mediaObj->LoadClip(mutablePath.data(), 0, 0, FALSE);
@@ -163,11 +180,33 @@ void CMediaObjSourceAdapter::Unload()
     if (m_mediaObj)
     {
         IMediaObj8Source* mediaObj = static_cast<IMediaObj8Source*>(m_mediaObj);
+        RECT emptyBounds = { 0, 0, 0, 0 };
+        mediaObj->SetDisplayWnd(nullptr, emptyBounds);
         mediaObj->Unload();
         mediaObj->Release();
         m_mediaObj = nullptr;
     }
     m_info = SourceMediaInfo{};
+}
+
+void CMediaObjSourceAdapter::SetPreviewWindow(HWND window)
+{
+    m_previewWindow = window;
+    if (!window && m_mediaObj)
+    {
+        RECT emptyBounds = { 0, 0, 0, 0 };
+        static_cast<IMediaObj8Source*>(m_mediaObj)->SetDisplayWnd(nullptr, emptyBounds);
+    }
+}
+
+void CMediaObjSourceAdapter::ResizePreview(int width, int height)
+{
+    if (!m_mediaObj || !m_previewWindow || !::IsWindow(m_previewWindow) ||
+        width <= 0 || height <= 0)
+        return;
+
+    RECT bounds = { 0, 0, width, height };
+    static_cast<IMediaObj8Source*>(m_mediaObj)->SetDisplayWnd(m_previewWindow, bounds);
 }
 
 bool CMediaObjSourceAdapter::EnsureMediaObj()

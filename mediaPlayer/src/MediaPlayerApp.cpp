@@ -22,14 +22,17 @@ public:
         }
 
         if (__argc > 2 && __targv && __targv[1] && __targv[2] &&
-            _wcsicmp(__targv[1], L"--probe-mediaobj") == 0)
+            (_wcsicmp(__targv[1], L"--probe-mediaobj") == 0 ||
+             _wcsicmp(__targv[1], L"--probe-mediaobj-preview") == 0))
         {
             wchar_t executablePath[MAX_PATH] = { 0 };
             ::GetModuleFileNameW(nullptr, executablePath, MAX_PATH);
             ::PathRemoveFileSpecW(executablePath);
             ::PathAddBackslashW(executablePath);
+            const bool previewEnabled =
+                _wcsicmp(__targv[1], L"--probe-mediaobj-preview") == 0;
             const PlaybackRuntimeProbeResult probe = CPlaybackRuntimeProbe::RunSourceProbe(
-                executablePath, __targv[2]);
+                executablePath, __targv[2], previewEnabled);
             ::ExitProcess(probe.IsReady() && probe.sourceOpened
                 ? ERROR_SUCCESS : ERROR_OPEN_FAILED);
         }

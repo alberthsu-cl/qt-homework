@@ -32,7 +32,9 @@ const DWORD kMediaInfoTypeHeight = 0x0005;
 const DWORD kMediaInfoTypeDuration = 0x0007;
 const DWORD kMediaObjModeVideoRenderer = 5;
 const DWORD kMediaObjModeGraph = 23;
+const int kMediaObjRendererEvr = 4;
 const int kMediaObjRendererNull = 3;
+const int kMediaObjGraphPreview = 0;
 const int kMediaObjGraphSnapshot = 1;
 const UINT kMediaTypeAudio = 0x03;
 
@@ -79,7 +81,7 @@ void ApplyPdrRegistryPath(IUnknown* mediaObj)
     regPath->Release();
 }
 
-HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
+HRESULT ConfigureGraph(IUnknown* mediaObj, bool previewEnabled)
 {
     IMediaObjInfoProbe* mediaInfo = nullptr;
     const HRESULT queryResult = mediaObj->QueryInterface(kIidMediaObjInfo,
@@ -87,15 +89,16 @@ HRESULT ConfigureSourceOnlyGraph(IUnknown* mediaObj)
     if (FAILED(queryResult) || !mediaInfo)
         return queryResult;
 
-    int graphMode = kMediaObjGraphSnapshot;
+    int graphMode = previewEnabled ? kMediaObjGraphPreview : kMediaObjGraphSnapshot;
     const HRESULT graphResult = mediaInfo->SetModeInfo(kMediaObjModeGraph, &graphMode);
-    int renderer = kMediaObjRendererNull;
+    int renderer = previewEnabled ? kMediaObjRendererEvr : kMediaObjRendererNull;
     const HRESULT rendererResult = SUCCEEDED(graphResult)
         ? mediaInfo->SetModeInfo(kMediaObjModeVideoRenderer, &renderer)
         : graphResult;
     mediaInfo->Release();
 
-    QtKitHost::Log("[M0-02] source graph setup: snapshot=%ls, null-renderer=%ls",
+    QtKitHost::Log("[M0-02] source graph setup: mode=%s, graph=%ls, renderer=%ls",
+        previewEnabled ? "preview/EVR" : "snapshot/null",
         FormatHResult(graphResult).c_str(), FormatHResult(rendererResult).c_str());
     return rendererResult;
 }
@@ -347,7 +350,8 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::Run(const std::wstring& execut
 
 PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
     const std::wstring& executableDirectory,
-    const std::wstring& sourcePath)
+    const std::wstring& sourcePath,
+    bool previewEnabled)
 {
     PlaybackRuntimeProbeResult result = Run(executableDirectory);
     if (!result.IsReady())
@@ -382,15 +386,50 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
 
     ApplyPdrRegistryPath(mediaObj);
 
-    const HRESULT configureResult = ConfigureSourceOnlyGraph(mediaObj);
+    HWND previewWindow = nullptr;
+    if (previewEnabled)
+    {
+        previewWindow = ::CreateWindowExW(0, L"STATIC", nullptr,
+            WS_POPUP | SS_BLACKRECT, 0, 0, 640, 360, nullptr, nullptr,
+            ::GetModuleHandleW(nullptr), nullptr);
+        if (!previewWindow)
+        {
+            QtKitHost::Log("[M0-02] preview window creation failed: win32=%lu",
+                ::GetLastError());
+            mediaObj->Release();
+            ::CoUninitialize();
+            result.statusText = L"MediaObj preview probe failed: preview window creation failed.";
+            return result;
+        }
+    }
+
+    const HRESULT configureResult = ConfigureGraph(mediaObj, previewEnabled);
     if (FAILED(configureResult))
     {
         QtKitHost::Log("[M0-02] source graph setup failed: %ls",
             FormatHResult(configureResult).c_str());
+        if (previewWindow)
+            ::DestroyWindow(previewWindow);
         mediaObj->Release();
         ::CoUninitialize();
         result.statusText = L"MediaObj source probe failed: source graph setup failed.";
         return result;
+    }
+
+    if (previewWindow)
+    {
+        RECT previewBounds = { 0, 0, 640, 360 };
+        const HRESULT displayResult = mediaObj->SetDisplayWnd(previewWindow, previewBounds);
+        QtKitHost::Log("[M0-02] preview SetDisplayWnd: %ls",
+            FormatHResult(displayResult).c_str());
+        if (FAILED(displayResult))
+        {
+            ::DestroyWindow(previewWindow);
+            mediaObj->Release();
+            ::CoUninitialize();
+            result.statusText = L"MediaObj preview probe failed: SetDisplayWnd failed.";
+            return result;
+        }
     }
 
     std::vector<wchar_t> mutablePath(sourcePath.begin(), sourcePath.end());
@@ -417,12 +456,22 @@ PlaybackRuntimeProbeResult CPlaybackRuntimeProbe::RunSourceProbe(
             (mediaType == kMediaTypeAudio ? hasDuration : hasDimensions);
     }
 
+    if (previewWindow)
+    {
+        RECT emptyBounds = { 0, 0, 0, 0 };
+        mediaObj->SetDisplayWnd(nullptr, emptyBounds);
+    }
     mediaObj->Unload();
     mediaObj->Release();
+    if (previewWindow)
+        ::DestroyWindow(previewWindow);
     ::CoUninitialize();
     result.statusText = result.sourceOpened
-        ? L"MediaObj source probe passed."
-        : L"MediaObj source probe failed. See MediaPlayer.log.";
-    QtKitHost::Log("[M0-02] RESULT: %s", result.sourceOpened ? "pass" : "FAILED");
+        ? (previewEnabled ? L"MediaObj preview probe passed." : L"MediaObj source probe passed.")
+        : (previewEnabled ? L"MediaObj preview probe failed. See MediaPlayer.log."
+                          : L"MediaObj source probe failed. See MediaPlayer.log.");
+    QtKitHost::Log("[M0-02] RESULT (%s): %s",
+        previewEnabled ? "preview" : "source",
+        result.sourceOpened ? "pass" : "FAILED");
     return result;
 }

@@ -34,6 +34,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_COMMAND(IDM_FILE_IMPORT, &CMainFrame::OnFileImport)
     ON_COMMAND(IDM_FILE_EXIT, &CMainFrame::OnFileExit)
     ON_MESSAGE(WM_APP_QML_CLICK, &CMainFrame::OnQmlClick)
+    ON_MESSAGE(WM_APP_PREVIEW_SIZE, &CMainFrame::OnPreviewSize)
 END_MESSAGE_MAP()
 
 CMainFrame::CMainFrame() = default;
@@ -60,11 +61,24 @@ int CMainFrame::OnCreate(LPCREATESTRUCT createStruct)
                     CRect(0, 0, 0, 0), this, 0);
     m_status.SetFont(GetFont());
 
+    m_previewWindow = ::CreateWindowExW(0, L"STATIC", nullptr,
+        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SS_BLACKRECT,
+        0, 0, 1, 1, GetSafeHwnd(), nullptr, AfxGetInstanceHandle(), nullptr);
+
     m_controller.reset(new CMediaPlayerController());
-    m_viewController.reset(new CMediaPlayerViewController(m_controller.get(), GetSafeHwnd()));
+    m_controller->SetPreviewWindow(m_previewWindow);
+    m_viewController.reset(new CMediaPlayerViewController(
+        m_controller.get(), GetSafeHwnd(), m_previewWindow));
     if (!m_viewController->Present())
         m_status.SetWindowText(_T("  QtKit.dll failed to load from the executable folder."));
 
+    return 0;
+}
+
+LRESULT CMainFrame::OnPreviewSize(WPARAM wParam, LPARAM lParam)
+{
+    if (m_controller)
+        m_controller->ResizePreview(static_cast<int>(wParam), static_cast<int>(lParam));
     return 0;
 }
 
@@ -169,6 +183,8 @@ void CMainFrame::LayoutChildren()
 
 void CMainFrame::OnDestroy()
 {
+    if (m_controller)
+        m_controller->SetPreviewWindow(nullptr);
     if (m_viewController)
     {
         m_viewController->Dismiss();
@@ -176,5 +192,8 @@ void CMainFrame::OnDestroy()
     }
     QtKitHost::Inst().Stop();
     m_controller.reset();
+    if (m_previewWindow && ::IsWindow(m_previewWindow))
+        ::DestroyWindow(m_previewWindow);
+    m_previewWindow = nullptr;
     CFrameWnd::OnDestroy();
 }

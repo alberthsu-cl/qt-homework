@@ -7,9 +7,11 @@
 
 CMediaPlayerViewController::CMediaPlayerViewController(
     CMediaPlayerController* controller,
-    HWND notifyWindow)
+    HWND notifyWindow,
+    HWND previewWindow)
     : m_controller(controller)
     , m_notifyWindow(notifyWindow)
+    , m_previewWindow(previewWindow)
 {
 }
 
@@ -25,6 +27,14 @@ bool CMediaPlayerViewController::Present()
 
 void CMediaPlayerViewController::Dismiss()
 {
+    IQmlContext* context = QtKitHost::Inst().Context();
+    if (context && context->isObjectBound(MediaPlayerName.previewHost))
+    {
+        context->runOnQtThreadSync([context]() {
+            if (context->isObjectBound(MediaPlayerName.previewHost))
+                context->windowHost(MediaPlayerName.previewHost).window(nullptr);
+        });
+    }
     if (m_qmlWindow && ::IsWindow(m_qmlWindow))
     {
         ::SetParent(m_qmlWindow, nullptr);
@@ -84,6 +94,16 @@ void CMediaPlayerViewController::OnQmlDidLoad()
 
     WireButtons(context);
     WireSelectionProperty(context);
+    if (context->isObjectBound(MediaPlayerName.previewHost) && m_previewWindow)
+        context->windowHost(MediaPlayerName.previewHost).window(m_previewWindow);
+    if (context->isObjectBound(MediaPlayerName.previewArea))
+    {
+        context->item(MediaPlayerName.previewArea).setSizeChangedAction(
+            [this](float width, float height) {
+                ::PostMessage(m_notifyWindow, WM_APP_PREVIEW_SIZE,
+                    static_cast<WPARAM>(width), static_cast<LPARAM>(height));
+            });
+    }
     m_controller->PublishState();
     m_ready = true;
     ::PostMessage(m_notifyWindow, WM_APP_QML_CLICK, kClickReady, 0);
@@ -126,7 +146,11 @@ void CMediaPlayerViewController::UpdateSelectedMediaPreview(IQmlContext* context
     const SelectedMedia asset = m_controller->SelectedAsset();
     const SourceMediaInfo sourceInfo = m_controller->SelectedSourceInfo();
     if (context->isObjectBound(MediaPlayerName.previewImage))
-        context->image(MediaPlayerName.previewImage).source(asset.sourceUrl.c_str());
+    {
+        const char* source = asset.kind == MediaKind::Image
+            ? asset.sourceUrl.c_str() : "";
+        context->image(MediaPlayerName.previewImage).source(source);
+    }
     if (context->isObjectBound(MediaPlayerName.statusLabel))
     {
         std::string message = sourceInfo.statusText;

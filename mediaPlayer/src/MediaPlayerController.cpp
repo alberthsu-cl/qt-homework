@@ -84,6 +84,16 @@ void CMediaPlayerController::Stop()
     PublishState();
 }
 
+void CMediaPlayerController::SetPreviewWindow(HWND window)
+{
+    m_sourceAdapter.SetPreviewWindow(window);
+}
+
+void CMediaPlayerController::ResizePreview(int width, int height)
+{
+    m_sourceAdapter.ResizePreview(width, height);
+}
+
 SelectedMedia CMediaPlayerController::SelectedAsset() const
 {
     std::lock_guard<std::mutex> guard(m_mediaMutex);
@@ -206,6 +216,10 @@ void CMediaPlayerController::LoadSelectedSource(const SelectedMedia& asset)
     {
         sourceInfo = m_sourceAdapter.Load(asset.filePath);
     }
+
+    QtKitHost::Log("[H2-03] source route: kind=%s, loaded=%s, error=0x%08lX, status=%s",
+        MediaKindText(asset.kind), sourceInfo.loaded ? "yes" : "no",
+        static_cast<unsigned long>(sourceInfo.errorCode), sourceInfo.statusText.c_str());
 
     std::lock_guard<std::mutex> guard(m_mediaMutex);
     m_selectedSourceInfo = sourceInfo;

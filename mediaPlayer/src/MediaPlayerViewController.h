@@ -10,7 +10,9 @@ struct IQmlContext;
 class CMediaPlayerViewController
 {
 public:
-    CMediaPlayerViewController(CMediaPlayerController* controller, HWND notifyWindow);
+    CMediaPlayerViewController(CMediaPlayerController* controller,
+                               HWND notifyWindow,
+                               HWND previewWindow);
     ~CMediaPlayerViewController();
 
     bool Present();
@@ -30,6 +32,7 @@ private:
 
     CMediaPlayerController* m_controller{ nullptr };
     HWND m_notifyWindow{ nullptr };
+    HWND m_previewWindow{ nullptr };
     std::atomic<HWND> m_qmlWindow{ nullptr };
     std::atomic<bool> m_ready{ false };
     std::atomic<int> m_requestedMediaIndex{ -1 };

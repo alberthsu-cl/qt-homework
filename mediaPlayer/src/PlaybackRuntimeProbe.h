@@ -23,8 +23,10 @@ public:
     // registration-free COM activation without retaining an engine interface.
     static PlaybackRuntimeProbeResult Run(const std::wstring& executableDirectory);
 
-    // Opens and inspects one source without creating a preview window.
+    // Opens and inspects one source. Preview mode verifies the EVR graph
+    // against a private native window without starting the application UI.
     static PlaybackRuntimeProbeResult RunSourceProbe(
         const std::wstring& executableDirectory,
-        const std::wstring& sourcePath);
+        const std::wstring& sourcePath,
+        bool previewEnabled = false);
 };
